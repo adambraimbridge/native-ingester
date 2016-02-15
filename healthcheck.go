@@ -19,11 +19,11 @@ type Healthcheck struct {
 }
 
 func (h *Healthcheck) checkHealth() func(w http.ResponseWriter, r *http.Request) {
-	return fthealth.HandlerParallel("Dependent services healthcheck", "Checks if all the dependent services are reachable and healthy.", h.messageQueueProxyReachable())
+	return fthealth.HandlerParallel("Dependent services healthcheck", "Checks if all the dependent services are reachable and healthy.", h.messageQueueProxyReachable(), h.nativeWriterReachable())
 }
 
 func (h *Healthcheck) gtg(writer http.ResponseWriter, req *http.Request) {
-	healthChecks := []func() error{h.checkAggregateMessageQueueProxiesReachable}
+	healthChecks := []func() error{h.checkAggregateMessageQueueProxiesReachable, h.checkNativeWriterHealthy}
 
 	for _, hCheck := range healthChecks {
 		if err := hCheck(); err != nil {
@@ -44,11 +44,20 @@ func (h *Healthcheck) messageQueueProxyReachable() fthealth.Check {
 	}
 
 }
+func (h *Healthcheck) nativeWriterReachable() fthealth.Check {
+	return fthealth.Check{
+		BusinessImpact:   "Low impact. Native content is not persisted.",
+		Name:             "NativeWriterReachable",
+		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/v1-suggestor-runbook",
+		Severity:         1,
+		TechnicalSummary: "Native writer is not reachable/healthy",
+		Checker:          h.checkNativeWriterHealthy,
+	}
+
+}
 
 func (h *Healthcheck) checkAggregateMessageQueueProxiesReachable() error {
-
 	errMsg := ""
-
 	for i := 0; i < len(h.srcConf.Addrs); i++ {
 		err := h.checkMessageQueueProxyReachable(h.srcConf.Addrs[i], h.srcConf.Topic, h.srcConf.AuthorizationKey, h.srcConf.Queue)
 		if err == nil {
@@ -56,11 +65,7 @@ func (h *Healthcheck) checkAggregateMessageQueueProxiesReachable() error {
 		}
 		errMsg = errMsg + fmt.Sprintf("For %s there is an error %v \n", h.srcConf.Addrs[i], err.Error())
 	}
-
-	//TODO check nativerw connectivity
-
 	return errors.New(errMsg)
-
 }
 
 func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic string, authKey string, queue string) error {
@@ -93,6 +98,29 @@ func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 	body, err := ioutil.ReadAll(resp.Body)
 	return checkIfTopicIsPresent(body, topic)
 
+}
+
+func (h *Healthcheck) checkNativeWriterHealthy() error {
+	address := h.nativeWriterConf.Address
+	req, err := http.NewRequest("GET", address+"/__gtg", nil)
+	if err != nil {
+		warnLogger.Printf("Could not create request to native writer at [%s]: [%v]", address, err.Error())
+		return err
+	}
+	resp, err := h.client.Do(req)
+	if err != nil {
+		warnLogger.Printf("Could not connect to native writer at [%s]: [%v]", address, err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		errMsg := fmt.Sprintf("Native writer returned: [%d]", resp.StatusCode)
+		return errors.New(errMsg)
+	}
+
+	ioutil.ReadAll(resp.Body)
+	return nil
 }
 
 func checkIfTopicIsPresent(body []byte, searchedTopic string) error {

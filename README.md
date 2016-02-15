@@ -9,6 +9,7 @@ export|set SRC_GROUP=FooGroup
 export|set SRC_TOPIC=FooBarEvents
 export|set SRC_QUEUE=kafka
 export|set SRC_CONCURRENT_PROCESSING=true
+export|set SRC_UUID_FIELD=uuid - default value: uuid
 export|set DEST_ADDRESS=http://nativerw:8080
 export|set DEST_COLLECTION=DestCollection
 ./native-ingester[.exe]
