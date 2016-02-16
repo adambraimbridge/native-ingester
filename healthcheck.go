@@ -110,7 +110,7 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 		return err
 	}
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
-		req.Header.Set("Host", h.nativeWriterConf.Header)
+		req.Host = h.nativeWriterConf.Header
 	}
 	resp, err := h.client.Do(req)
 	if err != nil {
