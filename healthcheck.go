@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"strings"
+
 	"github.com/Financial-Times/go-fthealth"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 )
@@ -37,7 +39,7 @@ func (h *Healthcheck) messageQueueProxyReachable() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Content V1 Metadata is not suggested. This will negatively impact V1 metadata availability.",
 		Name:             "MessageQueueProxyReachable",
-		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/v1-suggestor-runbook",
+		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/native-ingester-runbook",
 		Severity:         1,
 		TechnicalSummary: "Message queue proxy is not reachable/healthy",
 		Checker:          h.checkAggregateMessageQueueProxiesReachable,
@@ -48,7 +50,7 @@ func (h *Healthcheck) nativeWriterReachable() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Low impact. Native content is not persisted.",
 		Name:             "NativeWriterReachable",
-		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/v1-suggestor-runbook",
+		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/native-ingester-runbook",
 		Severity:         1,
 		TechnicalSummary: "Native writer is not reachable/healthy",
 		Checker:          h.checkNativeWriterHealthy,
@@ -106,6 +108,9 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 	if err != nil {
 		warnLogger.Printf("Could not create request to native writer at [%s]: [%v]", address, err.Error())
 		return err
+	}
+	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
+		req.Header.Set("Host", h.nativeWriterConf.Header)
 	}
 	resp, err := h.client.Do(req)
 	if err != nil {
