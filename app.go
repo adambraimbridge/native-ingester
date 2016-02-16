@@ -13,6 +13,7 @@ import (
 
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/golang/go/src/pkg/bytes"
+	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
@@ -22,6 +23,7 @@ import (
 type NativeWriterConfig struct {
 	Address    string
 	Collection string
+	Header     string
 }
 
 var uuidField string
@@ -78,6 +80,12 @@ func main() {
 		Desc:   "The collection to persist the native content in",
 		EnvVar: "DEST_COLLECTION",
 	})
+	destinationHeader := app.String(cli.StringOpt{
+		Name:   "destination-header",
+		Value:  "nativerw",
+		Desc:   "coco-specific header needed to reach the destination address",
+		EnvVar: "DEST_HEADER",
+	})
 
 	app.Action = func() {
 		uuidField = *sourceUUIDField
@@ -93,6 +101,7 @@ func main() {
 		nativeWriterConfig := NativeWriterConfig{
 			Address:    *destinationAddress,
 			Collection: *destinationCollection,
+			Header:     *destinationHeader,
 		}
 
 		writerConfig = nativeWriterConfig
@@ -164,10 +173,14 @@ func handleMessage(msg consumer.Message) {
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
 
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer([]byte(msg.Body)))
-	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
 		return
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
+		request.Header.Set("Host", writerConfig.Header)
 	}
 
 	response, err := client.Do(request)
