@@ -180,7 +180,7 @@ func handleMessage(msg consumer.Message) {
 
 	request.Header.Set("Content-Type", "application/json")
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
-		request.Header.Set("Host", writerConfig.Header)
+		request.Host = writerConfig.Header
 	}
 
 	response, err := client.Do(request)
