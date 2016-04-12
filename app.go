@@ -17,13 +17,19 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
+	"io"
 )
 
 // NativeWriterConfig Holds the configuration for the Native Writer
 type NativeWriterConfig struct {
-	Address    string
-	Collection string
-	Header     string
+	Address                string
+	CollectionsByOriginIds []CollectionByOriginId
+	Header                 string
+}
+
+type CollectionByOriginId struct {
+	OriginId   string `json:"originId"`
+	Collection string `json:"collection"`
 }
 
 var uuidField string
@@ -74,11 +80,11 @@ func main() {
 		Desc:   "Where to persist the native content",
 		EnvVar: "DEST_ADDRESS",
 	})
-	destinationCollection := app.String(cli.StringOpt{
-		Name:   "destination-collection",
-		Value:  "",
-		Desc:   "The collection to persist the native content in",
-		EnvVar: "DEST_COLLECTION",
+	destinationCollectionsByOrigins := app.String(cli.StringOpt{
+		Name:   "destination-collections-by-origins",
+		Value:  "[]",
+		Desc:   "JSON. originId that a content has. collection to persist the native content in. e.g. [{\"originId\":\"http://cmdb.ft.com/systems/methode-web-pub\",\"collection\":\"methode\"}]",
+		EnvVar: "DEST_COLLECTIONS_BY_ORIGINS",
 	})
 	destinationHeader := app.String(cli.StringOpt{
 		Name:   "destination-header",
@@ -89,7 +95,6 @@ func main() {
 
 	app.Action = func() {
 		uuidField = *sourceUUIDField
-
 		srcConf := consumer.QueueConfig{
 			Addrs:                *sourceAddresses,
 			Group:                *sourceGroup,
@@ -97,15 +102,17 @@ func main() {
 			Queue:                *sourceQueue,
 			ConcurrentProcessing: *sourceConcurrentProcessing,
 		}
-
-		nativeWriterConfig := NativeWriterConfig{
-			Address:    *destinationAddress,
-			Collection: *destinationCollection,
-			Header:     *destinationHeader,
-		}
-
-		writerConfig = nativeWriterConfig
 		initLogs(os.Stdout, os.Stdout, os.Stderr)
+		var collectionsByOriginIds []CollectionByOriginId
+		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
+			errorLogger.Panicf("Couldn't parse JSON for originId to collection map: %v\n", err)
+		}
+		nativeWriterConfig := NativeWriterConfig{
+			Address:                *destinationAddress,
+			CollectionsByOriginIds: collectionsByOriginIds,
+			Header:                 *destinationHeader,
+		}
+		writerConfig = nativeWriterConfig
 		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
 		infoLogger.Printf("[Startup] Using native writer configuration: %# v", pretty.Formatter(nativeWriterConfig))
 
@@ -152,44 +159,45 @@ func readMessages(config consumer.QueueConfig) {
 
 func handleMessage(msg consumer.Message) {
 	tid := msg.Headers["X-Request-Id"]
+	coll := findCollection(msg)
+	if coll == "" {
+		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
+		return
+	}
 	contents := make(map[string]interface{})
-
 	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
 		errorLogger.Printf("[%s] Error unmarshalling message: [%v]", tid, err.Error())
 		return
 	}
 
 	uuid := contents[uuidField]
-	infoLogger.Printf("[%s] Start  processing native publish event for uuid [%s]", tid, uuid)
-
+	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)
 	uuidString, ok := uuid.(string)
-
 	if !ok {
 		errorLogger.Printf("[%s] Error transforming uuid [%v] to string.", tid, uuid)
 		return
 	}
 
-	requestURL := writerConfig.Address + "/" + writerConfig.Collection + "/" + uuidString
+	requestURL := writerConfig.Address + "/" + coll + "/" + uuidString
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
-
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer([]byte(msg.Body)))
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
 		return
 	}
-
 	request.Header.Set("Content-Type", "application/json")
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
 		request.Host = writerConfig.Header
 	}
-
 	response, err := client.Do(request)
-
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
 		return
 	}
-	defer response.Body.Close()
+	defer func() {
+		io.Copy(ioutil.Discard, response.Body)
+		response.Body.Close()
+	}()
 
 	ioutil.ReadAll(response.Body)
 	if response.StatusCode != http.StatusOK {
@@ -197,5 +205,14 @@ func handleMessage(msg consumer.Message) {
 		return
 	}
 	infoLogger.Printf("[%s] Finish processing native publish event for uuid [%s]", tid, uuid)
+}
 
+func findCollection(msg consumer.Message) string {
+	originId := strings.TrimSpace(msg.Headers["Origin-System-Id"])
+	for _, e := range writerConfig.CollectionsByOriginIds {
+		if e.OriginId == originId {
+			return e.Collection
+		}
+	}
+	return ""
 }
