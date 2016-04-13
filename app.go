@@ -160,7 +160,7 @@ func handleMessage(msg consumer.Message) {
 	tid := msg.Headers["X-Request-Id"]
 	coll := findCollection(msg)
 	if coll == "" {
-		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id.", tid)
+		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
 	}
 	contents := make(map[string]interface{})
 
