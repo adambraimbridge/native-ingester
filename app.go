@@ -192,6 +192,7 @@ func handleMessage(msg consumer.Message) {
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
 		request.Host = writerConfig.Header
 	}
+	infoLogger.Printf("doing request %v %v %v %v", request.URL, request.Header["Content-Type"], request.Host, request.Method)
 
 	response, err := client.Do(request)
 
