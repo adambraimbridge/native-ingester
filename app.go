@@ -101,7 +101,9 @@ func main() {
 			Queue:                *sourceQueue,
 			ConcurrentProcessing: *sourceConcurrentProcessing,
 		}
+		initLogs(os.Stdout, os.Stdout, os.Stderr)
 		var collectionsByOriginIds []CollectionByOriginId
+		infoLogger.Printf("raw collectionsByOriginIds=%s", *destinationCollectionsByOrigins)
 		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			errorLogger.Panicf("Couldn't parse JSON for originId to collection map: %v\n", err)
 		}
@@ -111,7 +113,6 @@ func main() {
 			Header:                 *destinationHeader,
 		}
 		writerConfig = nativeWriterConfig
-		initLogs(os.Stdout, os.Stdout, os.Stderr)
 		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
 		infoLogger.Printf("[Startup] Using native writer configuration: %# v", pretty.Formatter(nativeWriterConfig))
 
