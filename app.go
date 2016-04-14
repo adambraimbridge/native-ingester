@@ -161,6 +161,7 @@ func handleMessage(msg consumer.Message) {
 	coll := findCollection(msg)
 	if coll == "" {
 		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
+		return
 	}
 	contents := make(map[string]interface{})
 
@@ -211,8 +212,10 @@ func handleMessage(msg consumer.Message) {
 }
 
 func findCollection(msg consumer.Message) string {
+	originId := strings.TrimSpace(msg.Headers["Origin-System-Id"])
 	for _, e := range writerConfig.CollectionsByOriginIds {
-		if e.OriginId == msg.Headers["Origin-System-Id"] {
+		infoLogger.Printf("Comparing with -%s-", e.OriginId)
+		if e.OriginId == originId {
 			return e.Collection
 		}
 	}
