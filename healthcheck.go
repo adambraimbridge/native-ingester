@@ -90,7 +90,7 @@ func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
 		return err
 	}
-	defer resp.Body.Close()
+	defer properClose(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("Proxy returned status: %d", resp.StatusCode)
@@ -98,6 +98,9 @@ func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	return checkIfTopicIsPresent(body, topic)
 
 }
@@ -117,14 +120,11 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 		warnLogger.Printf("Could not connect to native writer at [%s]: [%v]", address, err.Error())
 		return err
 	}
-	defer resp.Body.Close()
-
+	defer properClose(resp)
 	if resp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("Native writer returned: [%d]", resp.StatusCode)
 		return errors.New(errMsg)
 	}
-
-	ioutil.ReadAll(resp.Body)
 	return nil
 }
 
