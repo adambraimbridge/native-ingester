@@ -23,13 +23,8 @@ import (
 // NativeWriterConfig Holds the configuration for the Native Writer
 type NativeWriterConfig struct {
 	Address                string
-	CollectionsByOriginIds []CollectionByOriginId
+	CollectionsByOriginIds map[string]string
 	Header                 string
-}
-
-type CollectionByOriginId struct {
-	OriginId   string `json:"originId"`
-	Collection string `json:"collection"`
 }
 
 var uuidField string
@@ -83,7 +78,7 @@ func main() {
 	destinationCollectionsByOrigins := app.String(cli.StringOpt{
 		Name:   "destination-collections-by-origins",
 		Value:  "[]",
-		Desc:   "JSON. originId that a content has. collection to persist the native content in. e.g. [{\"originId\":\"http://cmdb.ft.com/systems/methode-web-pub\",\"collection\":\"methode\"}]",
+		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
 		EnvVar: "DEST_COLLECTIONS_BY_ORIGINS",
 	})
 	destinationHeader := app.String(cli.StringOpt{
@@ -103,7 +98,7 @@ func main() {
 			ConcurrentProcessing: *sourceConcurrentProcessing,
 		}
 		initLogs(os.Stdout, os.Stdout, os.Stderr)
-		var collectionsByOriginIds []CollectionByOriginId
+		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			errorLogger.Panicf("Couldn't parse JSON for originId to collection map: %v\n", err)
 		}
@@ -120,7 +115,10 @@ func main() {
 		readMessages(srcConf)
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		println(err)
+	}
 }
 
 func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWriterConfig) {
@@ -159,7 +157,7 @@ func readMessages(config consumer.QueueConfig) {
 
 func handleMessage(msg consumer.Message) {
 	tid := msg.Headers["X-Request-Id"]
-	coll := findCollection(msg)
+	coll := writerConfig.CollectionsByOriginIds[strings.TrimSpace(msg.Headers["Origin-System-Id"])]
 	if coll == "" {
 		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
 		return
@@ -194,12 +192,8 @@ func handleMessage(msg consumer.Message) {
 		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
 		return
 	}
-	defer func() {
-		io.Copy(ioutil.Discard, response.Body)
-		response.Body.Close()
-	}()
+	defer properClose(response)
 
-	ioutil.ReadAll(response.Body)
 	if response.StatusCode != http.StatusOK {
 		errorLogger.Printf("[%s] Caller returned non-200 code: [%v]", tid, response.StatusCode)
 		return
@@ -207,12 +201,13 @@ func handleMessage(msg consumer.Message) {
 	infoLogger.Printf("[%s] Finish processing native publish event for uuid [%s]", tid, uuid)
 }
 
-func findCollection(msg consumer.Message) string {
-	originId := strings.TrimSpace(msg.Headers["Origin-System-Id"])
-	for _, e := range writerConfig.CollectionsByOriginIds {
-		if e.OriginId == originId {
-			return e.Collection
-		}
+func properClose(resp *http.Response) {
+	_, err := io.Copy(ioutil.Discard, resp.Body)
+	if err != nil {
+		warnLogger.Printf("Couldn't read response body: %v.", err)
 	}
-	return ""
+	err = resp.Body.Close()
+	if err != nil {
+		warnLogger.Printf("Couldn't close response body: %v.", err)
+	}
 }
