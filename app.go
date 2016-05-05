@@ -18,6 +18,8 @@ import (
 	"github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
 	"io"
+
+	"github.com/jmoiron/jsonq"
 )
 
 // NativeWriterConfig Holds the configuration for the Native Writer
@@ -27,7 +29,7 @@ type NativeWriterConfig struct {
 	Header                 string
 }
 
-var uuidField string
+var uuidFields []string
 var client = http.Client{}
 var writerConfig NativeWriterConfig
 
@@ -57,11 +59,11 @@ func main() {
 		Desc:   "The queue to read the messages from",
 		EnvVar: "SRC_QUEUE",
 	})
-	sourceUUIDField := app.String(cli.StringOpt{
-		Name:   "source-uuid-field",
-		Value:  "uuid",
-		Desc:   "Field in the message containing the UUID",
-		EnvVar: "SRC_UUID_FIELD",
+	sourceUUIDField := app.Strings(cli.StringsOpt{
+		Name:   "source-uuid-fields",
+		Value:  []string {},
+		Desc:   "List of JSONPaths to try for extracting the uuid from native message. e.g. uuid,post.uuid,data.uuidv3",
+		EnvVar: "SRC_UUID_FIELDS",
 	})
 	sourceConcurrentProcessing := app.Bool(cli.BoolOpt{
 		Name:   "source-concurrent-processing",
@@ -89,7 +91,7 @@ func main() {
 	})
 
 	app.Action = func() {
-		uuidField = *sourceUUIDField
+		uuidFields = *sourceUUIDField
 		srcConf := consumer.QueueConfig{
 			Addrs:                *sourceAddresses,
 			Group:                *sourceGroup,
@@ -164,23 +166,22 @@ func handleMessage(msg consumer.Message) {
 	}
 	contents := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling message: [%v]", tid, err.Error())
+		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
 		return
 	}
 
-	uuid := contents[uuidField]
+	uuid := extractUuid(contents, uuidFields)
+	if uuid == "" {
+		errorLogger.Printf("[%s] Error transforming uuid [%v] to string. Ignoring message.", tid, uuid)
+		return
+	}
 	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)
-	uuidString, ok := uuid.(string)
-	if !ok {
-		errorLogger.Printf("[%s] Error transforming uuid [%v] to string.", tid, uuid)
-		return
-	}
 
-	requestURL := writerConfig.Address + "/" + coll + "/" + uuidString
+	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer([]byte(msg.Body)))
 	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
+		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
 		return
 	}
 	request.Header.Set("Content-Type", "application/json")
@@ -189,16 +190,27 @@ func handleMessage(msg consumer.Message) {
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s]: [%v]", tid, requestURL, err.Error())
+		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
 		return
 	}
 	defer properClose(response)
 
 	if response.StatusCode != http.StatusOK {
-		errorLogger.Printf("[%s] Caller returned non-200 code: [%v]", tid, response.StatusCode)
+		errorLogger.Printf("[%s] Caller returned non-200 code: [%v] . Ignoring message.", tid, response.StatusCode)
 		return
 	}
-	infoLogger.Printf("[%s] Finish processing native publish event for uuid [%s]", tid, uuid)
+	infoLogger.Printf("[%s] Successfully finished processing native publish event for uuid [%s]", tid, uuid)
+}
+
+func extractUuid(contents map[string]interface{}, uuidFields []string) string {
+	jq := jsonq.NewQuery(contents)
+	for _, uuidField := range uuidFields {
+		uuid, err := jq.String(strings.Split(uuidField, ".")...)
+		if err == nil && uuid != "" {
+			return uuid
+		}
+	}
+	return ""
 }
 
 func properClose(resp *http.Response) {
