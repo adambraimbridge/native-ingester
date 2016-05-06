@@ -58,7 +58,7 @@ func main() {
 		Desc:   "The queue to read the messages from",
 		EnvVar: "SRC_QUEUE",
 	})
-	sourceUUIDField := app.Strings(cli.StringsOpt{
+	sourceUUIDFields := app.Strings(cli.StringsOpt{
 		Name:   "source-uuid-fields",
 		Value:  []string {},
 		Desc:   "List of JSONPaths to try for extracting the uuid from native message. e.g. uuid,post.uuid,data.uuidv3",
@@ -90,7 +90,7 @@ func main() {
 	})
 
 	app.Action = func() {
-		uuidFields = *sourceUUIDField
+		uuidFields = *sourceUUIDFields
 		srcConf := consumer.QueueConfig{
 			Addrs:                *sourceAddresses,
 			Group:                *sourceGroup,
@@ -171,7 +171,7 @@ func handleMessage(msg consumer.Message) {
 
 	uuid := extractUuid(contents, uuidFields)
 	if uuid == "" {
-		errorLogger.Printf("[%s] Error transforming uuid [%v] to string. Ignoring message.", tid, uuid)
+		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message from message %v", tid, msg.Body)
 		return
 	}
 	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)
