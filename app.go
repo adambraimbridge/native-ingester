@@ -169,6 +169,7 @@ func handleMessage(msg consumer.Message) {
 		return
 	}
 
+	infoLogger.Printf("uuidFields: %v", uuidFields)
 	uuid := extractUuid(contents, uuidFields)
 	if uuid == "" {
 		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message from message %v", tid, msg.Body)
