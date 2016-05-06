@@ -1,5 +1,5 @@
 name    'ft-native_ingester'
-version '1.0.9'
+version '1.0.10'
 source 'UNKNOWN'
 author 'ft'
 license 'Apache License, Version 2.0'
