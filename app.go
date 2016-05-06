@@ -16,7 +16,6 @@ import (
 	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"github.com/kr/pretty"
 	"io"
 
 	"github.com/jmoiron/jsonq"
@@ -110,8 +109,8 @@ func main() {
 			Header:                 *destinationHeader,
 		}
 		writerConfig = nativeWriterConfig
-		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
-		infoLogger.Printf("[Startup] Using native writer configuration: %# v", pretty.Formatter(nativeWriterConfig))
+		infoLogger.Printf("[Startup] Using source configuration: %# v", srcConf)
+		infoLogger.Printf("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
 
 		go enableHealthChecks(srcConf, nativeWriterConfig)
 		readMessages(srcConf)
@@ -140,7 +139,7 @@ func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWr
 
 func readMessages(config consumer.QueueConfig) {
 	messageConsumer := consumer.NewConsumer(config, handleMessage, http.Client{})
-	infoLogger.Printf("[Startup] Consumer: %# v", pretty.Formatter(messageConsumer))
+	infoLogger.Printf("[Startup] Consumer: %# v", messageConsumer)
 
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
