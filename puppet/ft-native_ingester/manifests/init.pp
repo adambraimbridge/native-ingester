@@ -10,7 +10,7 @@ class native_ingester {
   $src_topic = hiera('src_topic')
   $src_queue = hiera('src_queue')
   $src_concurrent = hiera('src_concurrent')
-  $src_uuid_field = hiera('src_uuid_field')
+  $src_uuid_field = hiera('src_uuid_fields')
   $dest_address = hiera('dest_address')
   $dest_collections_by_origins = hiera('dest_collections_by_origins')
   $dest_header = hiera('dest_header')
