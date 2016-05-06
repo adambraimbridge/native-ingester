@@ -172,7 +172,7 @@ func handleMessage(msg consumer.Message) {
 	infoLogger.Printf("uuidFields: %v", uuidFields)
 	uuid := extractUuid(contents, uuidFields)
 	if uuid == "" {
-		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message from message %v", tid, msg.Body)
+		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message.", tid)
 		return
 	}
 	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)

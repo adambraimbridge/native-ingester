@@ -21,7 +21,7 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 serverurl=unix:///var/run/supervisor.sock ; use a unix:// URL  for a unix socket
 
 [program:<%= @binary_name %>]
-environment=SRC_ADDR="<%= @src_addr %>",SRC_GROUP="<%= @src_group %>",SRC_TOPIC="<%= @src_topic%>",SRC_QUEUE="<%= @src_queue%>",SRC_CONCURRENT_PROCESSING="<%= @src_concurrent%>",SRC_UUID_FIELD="<%= @src_uuid_field%>",DEST_ADDRESS="<%= @dest_address%>",DEST_COLLECTIONS_BY_ORIGINS='<%= @dest_collections_by_origins%>',DEST_HEADER="<%= @dest_header%>"
+environment=SRC_ADDR="<%= @src_addr %>",SRC_GROUP="<%= @src_group %>",SRC_TOPIC="<%= @src_topic%>",SRC_QUEUE="<%= @src_queue%>",SRC_CONCURRENT_PROCESSING="<%= @src_concurrent%>",SRC_UUID_FIELDS="<%= @src_uuid_fields%>",DEST_ADDRESS="<%= @dest_address%>",DEST_COLLECTIONS_BY_ORIGINS='<%= @dest_collections_by_origins%>',DEST_HEADER="<%= @dest_header%>"
 
 command=<%= @binary_file %>
 autorestart=true
