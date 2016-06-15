@@ -1,3 +1,2 @@
 .idea/
-native-ingester.exe
-native-ingester
+*exe
