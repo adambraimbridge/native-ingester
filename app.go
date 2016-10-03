@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"encoding/json"
 
@@ -108,6 +109,7 @@ func main() {
 			CollectionsByOriginIds: collectionsByOriginIds,
 			Header:                 *destinationHeader,
 		}
+
 		writerConfig = nativeWriterConfig
 		infoLogger.Printf("[Startup] Using source configuration: %# v", srcConf)
 		infoLogger.Printf("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
@@ -179,16 +181,29 @@ func handleMessage(msg consumer.Message) {
 
 	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
-	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer([]byte(msg.Body)))
+
+	contents["lastModified"] = time.Now().Round(time.Millisecond)
+
+	body, err := json.Marshal(contents)
+
+	if err != nil {
+		errorLogger.Printf("[%s] Error marshalling message: [%v]", tid, err.Error())
+		return
+	}
+
+	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(body))
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
 		return
 	}
+
 	request.Header.Set("Content-Type", "application/json")
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
 		request.Host = writerConfig.Header
 	}
+
 	response, err := client.Do(request)
+
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
 		return
