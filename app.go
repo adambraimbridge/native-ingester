@@ -184,14 +184,14 @@ func handleMessage(msg consumer.Message) {
 
 	contents["lastModified"] = time.Now().Round(time.Millisecond)
 
-	body, err := json.Marshal(contents)
+	bodyWithTimestamp, err := json.Marshal(contents)
 
 	if err != nil {
 		errorLogger.Printf("[%s] Error marshalling message: [%v]", tid, err.Error())
 		return
 	}
 
-	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(body))
+	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(bodyWithTimestamp))
 	if err != nil {
 		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
 		return
