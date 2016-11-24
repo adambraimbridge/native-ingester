@@ -61,7 +61,7 @@ func main() {
 	})
 	sourceUUIDFields := app.Strings(cli.StringsOpt{
 		Name:   "source-uuid-fields",
-		Value:  []string {},
+		Value:  []string{},
 		Desc:   "List of JSONPaths to try for extracting the uuid from native message. e.g. uuid,post.uuid,data.uuidv3",
 		EnvVar: "SRC_UUID_FIELDS",
 	})
@@ -198,6 +198,7 @@ func handleMessage(msg consumer.Message) {
 	}
 
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Request-Id", tid)
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
 		request.Host = writerConfig.Header
 	}
