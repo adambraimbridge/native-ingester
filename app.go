@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"encoding/json"
 
@@ -79,7 +78,7 @@ func main() {
 	})
 	destinationCollectionsByOrigins := app.String(cli.StringOpt{
 		Name:   "destination-collections-by-origins",
-		Value:  "[]",
+		Value:  "{}",
 		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
 		EnvVar: "DEST_COLLECTIONS_BY_ORIGINS",
 	})
@@ -182,7 +181,12 @@ func handleMessage(msg consumer.Message) {
 	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
 
-	contents["lastModified"] = time.Now().Round(time.Millisecond)
+	lastModified, found := msg.Headers["Message-Timestamp"]
+
+	if !found {
+		warnLogger.Printf("missing time stamp on message", tid, uuid)
+	}
+	contents["lastModified"] = lastModified
 
 	bodyWithTimestamp, err := json.Marshal(contents)
 
