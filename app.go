@@ -164,9 +164,9 @@ func handleMessage(msg consumer.Message) {
 		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
 		return
 	}
-	contents := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
+
+	contents, err := constructMessageBody(msg, tid)
+	if err != nil {
 		return
 	}
 
@@ -180,13 +180,6 @@ func handleMessage(msg consumer.Message) {
 
 	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
-
-	lastModified, found := msg.Headers["Message-Timestamp"]
-
-	if !found {
-		warnLogger.Printf("missing time stamp on message", tid, uuid)
-	}
-	contents["lastModified"] = lastModified
 
 	bodyWithTimestamp, err := json.Marshal(contents)
 
@@ -220,6 +213,23 @@ func handleMessage(msg consumer.Message) {
 		return
 	}
 	infoLogger.Printf("[%s] Successfully finished processing native publish event for uuid [%s]", tid, uuid)
+}
+
+func constructMessageBody(msg consumer.Message, tid string) (map[string]interface{}, error) {
+
+	contents := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
+		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
+		return nil, err
+	}
+
+	lastModified, found := msg.Headers["Message-Timestamp"]
+	if !found {
+		warnLogger.Printf("missing time stamp on message", tid)
+	}
+	contents["lastModified"] = lastModified
+
+	return contents, nil
 }
 
 func extractUuid(contents map[string]interface{}, uuidFields []string) string {
