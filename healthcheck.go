@@ -113,7 +113,7 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 		log.WithError(err).Warnf("Could not create request to native writer at [%s]", address)
 		return err
 	}
-	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
+	if len(strings.TrimSpace(h.nativeWriterConf.Header)) > 0 {
 		req.Host = h.nativeWriterConf.Header
 	}
 	resp, err := h.client.Do(req)

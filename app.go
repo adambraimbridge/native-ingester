@@ -10,17 +10,9 @@ import (
 
 	"encoding/json"
 
-	"io/ioutil"
-
-	"io"
-
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/golang/go/src/pkg/bytes"
-	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-
-	"github.com/jmoiron/jsonq"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -40,10 +32,6 @@ type NativeWriterConfig struct {
 	CollectionsByOriginIds map[string]string
 	Header                 string
 }
-
-var uuidFields []string
-var client = http.Client{}
-var writerConfig NativeWriterConfig
 
 func main() {
 	app := cli.App("Native Ingester", "A service to ingest native content of any type and persist it in the native store")
@@ -103,7 +91,7 @@ func main() {
 	})
 
 	app.Action = func() {
-		uuidFields = *sourceUUIDFields
+
 		srcConf := consumer.QueueConfig{
 			Addrs:                *sourceAddresses,
 			Group:                *sourceGroup,
@@ -122,12 +110,15 @@ func main() {
 			Header:                 *destinationHeader,
 		}
 
-		writerConfig = nativeWriterConfig
+		mh := newMessageHandler(*sourceUUIDFields, nativeWriterConfig)
+		messageConsumer := consumer.NewConsumer(srcConf, mh.handleMessage, http.Client{})
+		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 		log.Infof("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
+		log.Infof("[Startup] Using native writer configuration: %# v", *sourceUUIDFields)
 
 		go enableHealthChecks(srcConf, nativeWriterConfig)
-		readMessages(srcConf)
+		startMessageConsumption(messageConsumer)
 	}
 
 	err := app.Run(os.Args)
@@ -151,10 +142,7 @@ func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWr
 	}
 }
 
-func readMessages(config consumer.QueueConfig) {
-	messageConsumer := consumer.NewConsumer(config, handleMessage, http.Client{})
-	log.Infof("[Startup] Consumer: %# v", messageConsumer)
-
+func startMessageConsumption(messageConsumer consumer.Consumer) {
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 
@@ -168,87 +156,4 @@ func readMessages(config consumer.QueueConfig) {
 	<-ch
 	messageConsumer.Stop()
 	consumerWaitGroup.Wait()
-}
-
-func handleMessage(msg consumer.Message) {
-	tid := msg.Headers["X-Request-Id"]
-	coll := writerConfig.CollectionsByOriginIds[strings.TrimSpace(msg.Headers["Origin-System-Id"])]
-	if coll == "" {
-		log.WithField("transaction_id", tid).WithField("Origin-System-Id", msg.Headers["Origin-System-Id"]).Info("Skipping content because of not whitelisted Origin-System-Id")
-		return
-	}
-	contents := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		log.WithError(err).WithField("transaction_id", tid).Error("Error unmarshalling message. Ignoring message.")
-		return
-	}
-
-	log.Infof("uuidFields: %v", uuidFields)
-	uuid := extractUUID(contents, uuidFields)
-	if uuid == "" {
-		log.WithField("transaction_id", tid).Error("Error extracting uuid. Ignoring message.")
-		return
-	}
-	log.WithField("transaction_id", tid).WithField("uuid", uuid).Info("Start processing native publish event")
-
-	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
-	log.WithField("transaction_id", tid).WithField("requestURL", requestURL).Info("Built request URL for native writer")
-
-	contents["lastModified"] = time.Now().Round(time.Millisecond)
-
-	bodyWithTimestamp, err := json.Marshal(contents)
-
-	if err != nil {
-		log.WithError(err).WithField("transaction_id", tid).Error("Error marshalling message")
-		return
-	}
-
-	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(bodyWithTimestamp))
-	if err != nil {
-		log.WithError(err).WithField("transaction_id", tid).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-Request-Id", tid)
-	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
-		request.Host = writerConfig.Header
-	}
-
-	response, err := client.Do(request)
-
-	if err != nil {
-		log.WithError(err).WithField("transaction_id", tid).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return
-	}
-	defer properClose(response)
-
-	if response.StatusCode != http.StatusOK {
-		log.WithField("transaction_id", tid).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
-		return
-	}
-
-	log.WithField("transaction_id", tid).WithField("uuid", uuid).Info("Successfully finished processing native publish event")
-}
-
-func extractUUID(contents map[string]interface{}, uuidFields []string) string {
-	jq := jsonq.NewQuery(contents)
-	for _, uuidField := range uuidFields {
-		uuid, err := jq.String(strings.Split(uuidField, ".")...)
-		if err == nil && uuid != "" {
-			return uuid
-		}
-	}
-	return ""
-}
-
-func properClose(resp *http.Response) {
-	_, err := io.Copy(ioutil.Discard, resp.Body)
-	if err != nil {
-		log.WithError(err).Warn("Couldn't read response body")
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		log.WithError(err).Warn("Couldn't close response body")
-	}
 }
