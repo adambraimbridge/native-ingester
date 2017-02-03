@@ -12,15 +12,27 @@ import (
 
 	"io/ioutil"
 
+	"io"
+
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/golang/go/src/pkg/bytes"
 	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"io"
 
 	"github.com/jmoiron/jsonq"
+
+	log "github.com/Sirupsen/logrus"
 )
+
+func init() {
+	f := &log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339Nano,
+	}
+
+	log.SetFormatter(f)
+}
 
 // NativeWriterConfig Holds the configuration for the Native Writer
 type NativeWriterConfig struct {
@@ -99,10 +111,10 @@ func main() {
 			Queue:                *sourceQueue,
 			ConcurrentProcessing: *sourceConcurrentProcessing,
 		}
-		initLogs(os.Stdout, os.Stdout, os.Stderr)
+
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			errorLogger.Panicf("Couldn't parse JSON for originId to collection map: %v\n", err)
+			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
 		}
 		nativeWriterConfig := NativeWriterConfig{
 			Address:                *destinationAddress,
@@ -111,8 +123,8 @@ func main() {
 		}
 
 		writerConfig = nativeWriterConfig
-		infoLogger.Printf("[Startup] Using source configuration: %# v", srcConf)
-		infoLogger.Printf("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
+		log.Infof("[Startup] Using source configuration: %# v", srcConf)
+		log.Infof("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
 
 		go enableHealthChecks(srcConf, nativeWriterConfig)
 		readMessages(srcConf)
@@ -135,13 +147,13 @@ func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWr
 	http.Handle("/", router)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		errorLogger.Panicf("Couldn't set up HTTP listener: %v\n", err)
+		log.WithError(err).Panic("Couldn't set up HTTP listener")
 	}
 }
 
 func readMessages(config consumer.QueueConfig) {
 	messageConsumer := consumer.NewConsumer(config, handleMessage, http.Client{})
-	infoLogger.Printf("[Startup] Consumer: %# v", messageConsumer)
+	log.Infof("[Startup] Consumer: %# v", messageConsumer)
 
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
@@ -162,38 +174,38 @@ func handleMessage(msg consumer.Message) {
 	tid := msg.Headers["X-Request-Id"]
 	coll := writerConfig.CollectionsByOriginIds[strings.TrimSpace(msg.Headers["Origin-System-Id"])]
 	if coll == "" {
-		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
+		log.WithField("transaction_id", tid).WithField("Origin-System-Id", msg.Headers["Origin-System-Id"]).Info("Skipping content because of not whitelisted Origin-System-Id")
 		return
 	}
 	contents := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
+		log.WithError(err).WithField("transaction_id", tid).Error("Error unmarshalling message. Ignoring message.")
 		return
 	}
 
-	infoLogger.Printf("uuidFields: %v", uuidFields)
-	uuid := extractUuid(contents, uuidFields)
+	log.Infof("uuidFields: %v", uuidFields)
+	uuid := extractUUID(contents, uuidFields)
 	if uuid == "" {
-		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message.", tid)
+		log.WithField("transaction_id", tid).Error("Error extracting uuid. Ignoring message.")
 		return
 	}
-	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)
+	log.WithField("transaction_id", tid).WithField("uuid", uuid).Info("Start processing native publish event")
 
 	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
-	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
+	log.WithField("transaction_id", tid).WithField("requestURL", requestURL).Info("Built request URL for native writer")
 
 	contents["lastModified"] = time.Now().Round(time.Millisecond)
 
 	bodyWithTimestamp, err := json.Marshal(contents)
 
 	if err != nil {
-		errorLogger.Printf("[%s] Error marshalling message: [%v]", tid, err.Error())
+		log.WithError(err).WithField("transaction_id", tid).Error("Error marshalling message")
 		return
 	}
 
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(bodyWithTimestamp))
 	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
+		log.WithError(err).WithField("transaction_id", tid).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return
 	}
 
@@ -206,19 +218,20 @@ func handleMessage(msg consumer.Message) {
 	response, err := client.Do(request)
 
 	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
+		log.WithError(err).WithField("transaction_id", tid).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return
 	}
 	defer properClose(response)
 
 	if response.StatusCode != http.StatusOK {
-		errorLogger.Printf("[%s] Caller returned non-200 code: [%v] . Ignoring message.", tid, response.StatusCode)
+		log.WithField("transaction_id", tid).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
 		return
 	}
-	infoLogger.Printf("[%s] Successfully finished processing native publish event for uuid [%s]", tid, uuid)
+
+	log.WithField("transaction_id", tid).WithField("uuid", uuid).Info("Successfully finished processing native publish event")
 }
 
-func extractUuid(contents map[string]interface{}, uuidFields []string) string {
+func extractUUID(contents map[string]interface{}, uuidFields []string) string {
 	jq := jsonq.NewQuery(contents)
 	for _, uuidField := range uuidFields {
 		uuid, err := jq.String(strings.Split(uuidField, ".")...)
@@ -232,10 +245,10 @@ func extractUuid(contents map[string]interface{}, uuidFields []string) string {
 func properClose(resp *http.Response) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		warnLogger.Printf("Couldn't read response body: %v.", err)
+		log.WithError(err).Warn("Couldn't read response body")
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		warnLogger.Printf("Couldn't close response body: %v.", err)
+		log.WithError(err).Warn("Couldn't close response body")
 	}
 }

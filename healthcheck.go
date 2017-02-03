@@ -11,6 +11,7 @@ import (
 
 	"github.com/Financial-Times/go-fthealth"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Healthcheck offers methods to measure application health.
@@ -73,7 +74,7 @@ func (h *Healthcheck) checkAggregateMessageQueueProxiesReachable() error {
 func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic string, authKey string, queue string) error {
 	req, err := http.NewRequest("GET", address+"/topics", nil)
 	if err != nil {
-		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
+		log.WithError(err).Warn("Could not connect to proxy")
 		return err
 	}
 
@@ -87,7 +88,7 @@ func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 
 	resp, err := h.client.Do(req)
 	if err != nil {
-		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
+		log.WithError(err).Warn("Could not connect to proxy")
 		return err
 	}
 	defer properClose(resp)
@@ -109,7 +110,7 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 	address := h.nativeWriterConf.Address
 	req, err := http.NewRequest("GET", address+"/__gtg", nil)
 	if err != nil {
-		warnLogger.Printf("Could not create request to native writer at [%s]: [%v]", address, err.Error())
+		log.WithError(err).Warnf("Could not create request to native writer at [%s]", address)
 		return err
 	}
 	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
@@ -117,7 +118,7 @@ func (h *Healthcheck) checkNativeWriterHealthy() error {
 	}
 	resp, err := h.client.Do(req)
 	if err != nil {
-		warnLogger.Printf("Could not connect to native writer at [%s]: [%v]", address, err.Error())
+		log.WithError(err).Warnf("Could not connect to native writer at [%s]", address)
 		return err
 	}
 	defer properClose(resp)
