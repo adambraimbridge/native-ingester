@@ -11,12 +11,13 @@ import (
 
 	"io/ioutil"
 
+	"io"
+
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/golang/go/src/pkg/bytes"
 	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"io"
 
 	"github.com/jmoiron/jsonq"
 )
@@ -216,7 +217,6 @@ func handleMessage(msg consumer.Message) {
 }
 
 func constructMessageBody(msg consumer.Message, tid string) (map[string]interface{}, error) {
-
 	contents := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
 		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
@@ -225,9 +225,11 @@ func constructMessageBody(msg consumer.Message, tid string) (map[string]interfac
 
 	lastModified, found := msg.Headers["Message-Timestamp"]
 	if !found {
-		warnLogger.Printf("missing time stamp on message", tid)
+		warnLogger.Print("Missing time stamp on message", tid)
 	}
+
 	contents["lastModified"] = lastModified
+	contents["publishReference"] = tid
 
 	return contents, nil
 }
