@@ -225,7 +225,7 @@ func constructMessageBody(msg consumer.Message, tid string) (map[string]interfac
 
 	lastModified, found := msg.Headers["Message-Timestamp"]
 	if !found {
-		warnLogger.Print("Missing time stamp on message", tid)
+		warnLogger.Printf("Missing time stamp on message: %s", tid)
 	}
 
 	contents["lastModified"] = lastModified

@@ -13,7 +13,6 @@ const testBodyRawMsgValue = `{"uuid":"e7a3b814-59ee-459e-8f60-517f3e80ed99","typ
 
 func TestConstructBodyMessageSuccess(t *testing.T) {
 	initLogs(os.Stdout, os.Stdout, os.Stderr)
-	assert := assert.New(t)
 	incomingMsg := consumer.Message{
 		map[string]string{
 			"Message-Id":        "c4b96810-03e8-4057-84c5-dcc3a8c61a26",
@@ -28,13 +27,12 @@ func TestConstructBodyMessageSuccess(t *testing.T) {
 
 	actual, _ := constructMessageBody(incomingMsg, "SYNTHETIC-REQ-MON_Unv1K838lY")
 
-	assert.Equal("2015-10-19T09:30:29.110Z", actual["lastModified"], "Didn't get the expected lastModifiedValue")
-	assert.Equal("SYNTHETIC-REQ-MON_Unv1K838lY", actual["publishReference"], "Didn't get the expected publishReference")
+	assert.Equal(t, "2015-10-19T09:30:29.110Z", actual["lastModified"], "Didn't get the expected lastModifiedValue")
+	assert.Equal(t, "SYNTHETIC-REQ-MON_Unv1K838lY", actual["publishReference"], "Didn't get the expected publishReference")
 }
 
 func TestConstructBodyMessageError(t *testing.T) {
 	initLogs(os.Stdout, os.Stdout, os.Stderr)
-	assert := assert.New(t)
 	incomingMsg := consumer.Message{
 		map[string]string{
 			"Message-Id":        "c4b96810-03e8-4057-84c5-dcc3a8c61a26",
@@ -48,7 +46,7 @@ func TestConstructBodyMessageError(t *testing.T) {
 	}
 
 	_, err := constructMessageBody(incomingMsg, "nativeIngesterTest")
-	assert.Error(err)
+	assert.Error(t, err)
 }
 
 func TestExtractUuid_NormalCase(t *testing.T) {
