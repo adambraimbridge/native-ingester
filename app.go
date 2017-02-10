@@ -101,14 +101,14 @@ func main() {
 		bodyParser := native.NewContentBodyParser(*sourceUUIDFields)
 		writer := native.NewWriter(*destinationAddress, collectionsByOriginIds, *destinationHeader, bodyParser)
 
-		mh := newMessageHandler(*sourceUUIDFields, writer)
+		mh := newMessageHandler(writer)
 		messageConsumer := consumer.NewConsumer(srcConf, mh.handleMessage, http.Client{})
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
-		log.Infof("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
+		log.Infof("[Startup] Using native writer configuration: %# v", writer)
 		log.Infof("[Startup] Using native writer configuration: %# v", *sourceUUIDFields)
 
-		go enableHealthChecks(srcConf, nativeWriterConfig)
+		//go enableHealthChecks(srcConf, nativeWriterConfig)
 		startMessageConsumption(messageConsumer)
 	}
 
@@ -119,20 +119,20 @@ func main() {
 }
 
 //TODO Fix health check
-func enableHealthChecks(srcConf consumer.QueueConfig, nw nativeWriter) {
-	// healthCheck := &Healthcheck{
-	// 	client:           http.Client{},
-	// 	srcConf:          srcConf,
-	// 	nativeWriterConf: nativeWriteConfig}
-	// router := mux.NewRouter()
-	// router.HandleFunc("/__health", healthCheck.checkHealth())
-	// router.HandleFunc("/__gtg", healthCheck.gtg)
-	// http.Handle("/", router)
-	// err := http.ListenAndServe(":8080", nil)
-	// if err != nil {
-	// 	log.WithError(err).Panic("Couldn't set up HTTP listener")
-	// }
-}
+//func enableHealthChecks(srcConf consumer.QueueConfig, nw nativeWriter) {
+// healthCheck := &Healthcheck{
+// 	client:           http.Client{},
+// 	srcConf:          srcConf,
+// 	nativeWriterConf: nativeWriteConfig}
+// router := mux.NewRouter()
+// router.HandleFunc("/__health", healthCheck.checkHealth())
+// router.HandleFunc("/__gtg", healthCheck.gtg)
+// http.Handle("/", router)
+// err := http.ListenAndServe(":8080", nil)
+// if err != nil {
+// 	log.WithError(err).Panic("Couldn't set up HTTP listener")
+// }
+//}
 
 func startMessageConsumption(messageConsumer consumer.Consumer) {
 	var consumerWaitGroup sync.WaitGroup
