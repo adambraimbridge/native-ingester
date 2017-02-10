@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/gorilla/mux"
+	"github.com/Financial-Times/native-ingester/native"
 	"github.com/jawher/mow.cli"
 
 	log "github.com/Sirupsen/logrus"
@@ -24,13 +24,6 @@ func init() {
 	}
 
 	log.SetFormatter(f)
-}
-
-// NativeWriterConfig Holds the configuration for the Native Writer
-type NativeWriterConfig struct {
-	Address                string
-	CollectionsByOriginIds map[string]string
-	Header                 string
 }
 
 func main() {
@@ -104,13 +97,11 @@ func main() {
 		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
 		}
-		nativeWriterConfig := NativeWriterConfig{
-			Address:                *destinationAddress,
-			CollectionsByOriginIds: collectionsByOriginIds,
-			Header:                 *destinationHeader,
-		}
 
-		mh := newMessageHandler(*sourceUUIDFields, nativeWriterConfig)
+		bodyParser := native.NewContentBodyParser(*sourceUUIDFields)
+		writer := native.NewWriter(*destinationAddress, collectionsByOriginIds, *destinationHeader, bodyParser)
+
+		mh := newMessageHandler(*sourceUUIDFields, writer)
 		messageConsumer := consumer.NewConsumer(srcConf, mh.handleMessage, http.Client{})
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
@@ -127,19 +118,20 @@ func main() {
 	}
 }
 
-func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWriterConfig) {
-	healthCheck := &Healthcheck{
-		client:           http.Client{},
-		srcConf:          srcConf,
-		nativeWriterConf: nativeWriteConfig}
-	router := mux.NewRouter()
-	router.HandleFunc("/__health", healthCheck.checkHealth())
-	router.HandleFunc("/__gtg", healthCheck.gtg)
-	http.Handle("/", router)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.WithError(err).Panic("Couldn't set up HTTP listener")
-	}
+//TODO Fix health check
+func enableHealthChecks(srcConf consumer.QueueConfig, nw nativeWriter) {
+	// healthCheck := &Healthcheck{
+	// 	client:           http.Client{},
+	// 	srcConf:          srcConf,
+	// 	nativeWriterConf: nativeWriteConfig}
+	// router := mux.NewRouter()
+	// router.HandleFunc("/__health", healthCheck.checkHealth())
+	// router.HandleFunc("/__gtg", healthCheck.gtg)
+	// http.Handle("/", router)
+	// err := http.ListenAndServe(":8080", nil)
+	// if err != nil {
+	// 	log.WithError(err).Panic("Couldn't set up HTTP listener")
+	// }
 }
 
 func startMessageConsumption(messageConsumer consumer.Consumer) {
