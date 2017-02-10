@@ -72,7 +72,7 @@ var unhappyTests = []struct {
 func TestExtractUUIDSuccessfully(t *testing.T) {
 	for _, test := range happyTests {
 		bodyParser := NewContentBodyParser(test.paths)
-		body := contentBody{}
+		body := ContentBody{}
 		json.Unmarshal([]byte(test.msgBody), &body)
 		actualUUID, err := bodyParser.getUUID(body)
 		assert.Nil(t, err, "The parsing should not return an error")
@@ -83,7 +83,7 @@ func TestExtractUUIDSuccessfully(t *testing.T) {
 func TestExtractUUIDFailure(t *testing.T) {
 	for _, test := range unhappyTests {
 		bodyParser := NewContentBodyParser(test.paths)
-		body := contentBody{}
+		body := ContentBody{}
 		json.Unmarshal([]byte(test.msgBody), &body)
 		_, err := bodyParser.getUUID(body)
 		assert.Error(t, err, "The parsing should return an error")

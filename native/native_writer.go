@@ -9,14 +9,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-
 	log "github.com/Sirupsen/logrus"
 )
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
-	Write(msg consumer.Message)
+	GetCollectionByOriginID(originID string) (string, error)
+	WriteContentBodyToCollection(cBody ContentBody, collection string) error
 }
 
 type nativeWriter struct {
@@ -49,32 +48,15 @@ func (c nativeCollections) getCollectionByOriginID(originID string) (string, err
 	return collection, nil
 }
 
-func (nw *nativeWriter) Write(msg consumer.Message) {
-
-	pubEvent := publicationEvent{msg}
-
-	cBody, err := pubEvent.contentBody()
-	if err != nil {
-		log.WithError(err).WithField("transaction_id", pubEvent.transactionID()).Error("Error unmarshalling content body from publication event. Ignoring message.")
-		return
-	}
-
-	collection, err := nw.collections.getCollectionByOriginID(pubEvent.originSystemID())
-
-	if err != nil {
-		log.WithField("transaction_id", pubEvent.transactionID()).WithField("Origin-System-Id", pubEvent.originSystemID()).Info("Skipping content because of not whitelisted Origin-System-Id")
-		return
-	}
-
-	nw.writeContentBodyToCollection(cBody, collection)
-
+func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error) {
+	return nw.collections.getCollectionByOriginID(originID)
 }
 
-func (nw *nativeWriter) writeContentBodyToCollection(cBody contentBody, collection string) {
+func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collection string) error {
 	contentUUID, err := nw.bodyParser.getUUID(cBody)
 	if err != nil {
 		log.WithField("transaction_id", cBody.publishReference()).WithError(err).Error("Error extracting uuid. Ignoring message.")
-		return
+		return err
 	}
 	log.WithField("transaction_id", cBody.publishReference()).WithField("uuid", contentUUID).Info("Start processing native publish event")
 
@@ -82,7 +64,7 @@ func (nw *nativeWriter) writeContentBodyToCollection(cBody contentBody, collecti
 
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", cBody.publishReference()).Error("Error marshalling message")
-		return
+		return err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
@@ -91,7 +73,7 @@ func (nw *nativeWriter) writeContentBodyToCollection(cBody contentBody, collecti
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return
+		return err
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -105,17 +87,17 @@ func (nw *nativeWriter) writeContentBodyToCollection(cBody contentBody, collecti
 
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return
+		return err
 	}
 	defer properClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		log.WithField("transaction_id", cBody.publishReference()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
-		return
+		return errors.New("Native writer returned non-200 code")
 	}
 
 	log.WithField("transaction_id", cBody.publishReference()).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
-
+	return nil
 }
 
 func properClose(resp *http.Response) {

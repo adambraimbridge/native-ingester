@@ -1,11 +1,13 @@
-package native
+package queue
 
 import (
 	"encoding/json"
 	"errors"
 	"strings"
 
+	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/native-ingester/native"
 )
 
 type publicationEvent struct {
@@ -20,15 +22,15 @@ func (pe *publicationEvent) originSystemID() string {
 	return strings.TrimSpace(pe.Headers["Origin-System-Id"])
 }
 
-func (pe *publicationEvent) contentBody() (contentBody, error) {
-	body := make(contentBody)
+func (pe *publicationEvent) contentBody() (native.ContentBody, error) {
+	body := make(native.ContentBody)
 	if err := json.Unmarshal([]byte(pe.Body), &body); err != nil {
-		return contentBody{}, err
+		return native.ContentBody{}, err
 	}
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
 	if !found {
-		return contentBody{}, errors.New("Publish event does not contain timestamp")
+		return native.ContentBody{}, errors.New("Publish event does not contain timestamp")
 	}
 	body["lastModified"] = timestamp
 	body["publishReference"] = pe.transactionID()
@@ -36,8 +38,9 @@ func (pe *publicationEvent) contentBody() (contentBody, error) {
 	return body, nil
 }
 
-type contentBody map[string]interface{}
-
-func (body contentBody) publishReference() string {
-	return body["lastModified"].(string)
+func (pe *publicationEvent) producerMsg() producer.Message {
+	return producer.Message{
+		Headers: pe.Headers,
+		Body:    pe.Body,
+	}
 }
