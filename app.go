@@ -159,7 +159,7 @@ func main() {
 	}
 }
 
-func enableHealthCheck(c consumer.Consumer, nw native.Writer, p producer.MessageProducer) {
+func enableHealthCheck(c consumer.MessageConsumer, nw native.Writer, p producer.MessageProducer) {
 	hc := resources.NewHealthCheck(c, nw, p)
 
 	r := mux.NewRouter()
@@ -173,7 +173,7 @@ func enableHealthCheck(c consumer.Consumer, nw native.Writer, p producer.Message
 	}
 }
 
-func startMessageConsumption(messageConsumer consumer.Consumer) {
+func startMessageConsumption(messageConsumer consumer.MessageConsumer) {
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 
