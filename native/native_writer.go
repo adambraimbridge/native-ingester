@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/Financial-Times/service-status-go/httphandlers"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -16,6 +18,7 @@ import (
 type Writer interface {
 	GetCollectionByOriginID(originID string) (string, error)
 	WriteContentBodyToCollection(cBody ContentBody, collection string) error
+	ConnectivityCheck() (string, error)
 }
 
 type nativeWriter struct {
@@ -109,4 +112,21 @@ func properClose(resp *http.Response) {
 	if err != nil {
 		log.WithError(err).Warn("Couldn't close response body")
 	}
+}
+
+func (nw nativeWriter) ConnectivityCheck() (string, error) {
+	req, err := http.NewRequest("GET", nw.address+httphandlers.GTGPath, nil)
+	if err != nil {
+		return "Error in building request to check if the native writer is good to go", err
+	}
+	req.Host = nw.hostHeader
+
+	resp, err := nw.httpClient.Do(req)
+	if err != nil {
+		return "Native writer is not good to go.", err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "Native writer is not good to go.", fmt.Errorf("GTG HTTP status code is %v", resp.StatusCode)
+	}
+	return "Native writer is good to go.", nil
 }

@@ -14,6 +14,9 @@ import (
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/native-ingester/queue"
+	"github.com/Financial-Times/native-ingester/resources"
+	"github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 
 	log "github.com/Sirupsen/logrus"
@@ -129,13 +132,14 @@ func main() {
 
 		mh := queue.NewMessageHandler(writer)
 
+		var messageProducer producer.MessageProducer
 		if *writeQueueAddress != "" {
 			producerConfig := producer.MessageProducerConfig{
 				Addr:  *writeQueueAddress,
 				Topic: *writeQueueTopic,
 				Queue: *writeQueueHostHeader,
 			}
-			messageProducer := producer.NewMessageProducer(producerConfig)
+			messageProducer = producer.NewMessageProducer(producerConfig)
 			mh.ForwardTo(messageProducer)
 		}
 
@@ -145,7 +149,7 @@ func main() {
 		log.Infof("[Startup] Using native writer configuration: %# v", writer)
 		log.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
 
-		//go enableHealthChecks(srcConf, nativeWriterConfig)
+		go enableHealthCheck(messageConsumer, writer, messageProducer)
 		startMessageConsumption(messageConsumer)
 	}
 
@@ -155,21 +159,19 @@ func main() {
 	}
 }
 
-//TODO Fix health check
-//func enableHealthChecks(srcConf consumer.QueueConfig, nw nativeWriter) {
-// healthCheck := &Healthcheck{
-// 	client:           http.Client{},
-// 	srcConf:          srcConf,
-// 	nativeWriterConf: nativeWriteConfig}
-// router := mux.NewRouter()
-// router.HandleFunc("/__health", healthCheck.checkHealth())
-// router.HandleFunc("/__gtg", healthCheck.gtg)
-// http.Handle("/", router)
-// err := http.ListenAndServe(":8080", nil)
-// if err != nil {
-// 	log.WithError(err).Panic("Couldn't set up HTTP listener")
-// }
-//}
+func enableHealthCheck(c consumer.Consumer, nw native.Writer, p producer.MessageProducer) {
+	hc := resources.NewHealthCheck(c, nw, p)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/__health", hc.Handler())
+	r.HandleFunc(httphandlers.GTGPath, hc.GTG).Methods("GET")
+
+	http.Handle("/", r)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.WithError(err).Panic("Couldn't set up HTTP listener")
+	}
+}
 
 func startMessageConsumption(messageConsumer consumer.Consumer) {
 	var consumerWaitGroup sync.WaitGroup
