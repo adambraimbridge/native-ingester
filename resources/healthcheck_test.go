@@ -312,5 +312,5 @@ func (p ProducerMock) ConnectivityCheck() (string, error) {
 
 func (p ProducerMock) SendMessage(uuid string, msg producer.Message) error {
 	args := p.Called(uuid, msg)
-	return args.Error(1)
+	return args.Error(0)
 }

@@ -31,7 +31,6 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 	}
 
 	collection, err := mh.writer.GetCollectionByOriginID(pubEvent.originSystemID())
-
 	if err != nil {
 		log.WithField("transaction_id", pubEvent.transactionID()).WithField("Origin-System-Id", pubEvent.originSystemID()).Info("Skipping content because of not whitelisted Origin-System-Id")
 		return
