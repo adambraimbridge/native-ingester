@@ -4,5 +4,5 @@ package native
 type ContentBody map[string]interface{}
 
 func (body ContentBody) publishReference() string {
-	return body["lastModified"].(string)
+	return body["publishReference"].(string)
 }
