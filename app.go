@@ -165,6 +165,8 @@ func enableHealthCheck(c consumer.MessageConsumer, nw native.Writer, p producer.
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())
 	r.HandleFunc(httphandlers.GTGPath, hc.GTG).Methods("GET")
+	r.HandleFunc(httphandlers.BuildInfoPath, httphandlers.BuildInfoHandler).Methods("GET")
+	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
 
 	http.Handle("/", r)
 	err := http.ListenAndServe(":8080", nil)
