@@ -45,7 +45,7 @@ func main() {
 		Name:   "read-queue-group",
 		Value:  "",
 		Desc:   "Group used to read the messages from the queue.",
-		EnvVar: "Q_GROUP",
+		EnvVar: "Q_READ_GROUP",
 	})
 	readQueueTopic := app.String(cli.StringOpt{
 		Name:   "read-queue-topic",

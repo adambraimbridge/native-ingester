@@ -18,7 +18,7 @@ RUN apk --update add git go libc-dev \
   && LDFLAGS="-X '"${BUILDINFO_PACKAGE}$VERSION"' -X '"${BUILDINFO_PACKAGE}$DATETIME"' -X '"${BUILDINFO_PACKAGE}$REPOSITORY"' -X '"${BUILDINFO_PACKAGE}$REVISION"' -X '"${BUILDINFO_PACKAGE}$BUILDER"'" \
   && echo $LDFLAGS \
   && go get -t ./... \
-  &&go build -ldflags="${LDFLAGS}" \
+  && go build -ldflags="${LDFLAGS}" \
   && mv native-ingester /native-ingester-app \
   && apk del go git bzr \
   && rm -rf $GOPATH /var/cache/apk/*
