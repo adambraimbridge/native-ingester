@@ -2,29 +2,55 @@ Native Ingester
 ===============
 [![CircleCI](https://circleci.com/gh/Financial-Times/native-ingester.svg?style=svg)](https://circleci.com/gh/Financial-Times/native-ingester) [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/native-ingester)](https://goreportcard.com/report/github.com/Financial-Times/native-ingester) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/native-ingester/badge.svg?branch=master)](https://coveralls.io/github/Financial-Times/native-ingester?branch=master) [![codecov](https://codecov.io/gh/Financial-Times/native-ingester/branch/master/graph/badge.svg)](https://codecov.io/gh/Financial-Times/native-ingester)
 
-* Ingests native content (articles, metadata, etc.) and persists them in the native-store.
-* Reads from ONE queue topic, adds a timestamp to the message and writes to ONE db collection.
+Native ingester implements the following functionality:
+1. It consumes messages containing native CMS content or native CMS metadata from ONE queue topic.
+1. According to the data source, native ingester writes the content or metadata in a specific db collection.
+1. Optionally, it forwards consumed messages to a different queue.
 
 ## Installation & running locally
-* `go get -u github.com/Financial-Times/native-ingester`
-* `cd $GOPATH/src/github.com/Financial-Times/native-ingester`
-* `go test ./...`
-* `go install`
-* `$GOPATH/bin/native-ingester --neo-url={neo4jUrl} --port={port}`
-* `$GOPATH/bin/native-ingester --source-addresses={source-addresses} --source-group={source-group}
-    --source-topic={source-topic} --source-queue={source-queue} --source-concurrent-processing='true'
-    --source-uuid-field='uuid' --destination-address={destination-address}`
+Installation:
+```
+go get -u github.com/Financial-Times/native-ingester
+cd $GOPATH/src/github.com/Financial-Times/native-ingester
+go test ./...
+go install
 
---source-addresses is the url of the queue/proxy to listen to
---source-group is the groupname to use when listen to the queue
---source-topic is the topic to listen to on the queue
---source-queue is the name of the queue
---source-concurrent-processing allows processing multiple messages at one time
---source-uuid-field is the field which represents uuid in the message
---destination-address is the url of native-rw for writing to native store
---destination-collections-by-origins is for whitelisting messages by origin-id
---destination-header is a coco header for routing
+```
+Run it locally:
+```
+$GOPATH/bin/native-ingester
+    --read-queue-addresses={source-kafka-proxy-address}
+    --read-queue-group={topic-group}
+    --read-queue-topic={source-topic}
+    --read-queue-host-heade={source-kafka-proxy-host-header}
+    --source-concurrent-processing='true'
+    --source-uuid-field='["uuid", "post.uuid", "data.uuidv3"]'
+    --native-writer-address={native-writer-address}
+    --native-writer-host-header={native-writer-host-header}
+```
+List all the possible options:
+```
+$ native-ingester -v
 
+Usage: Native Ingester [OPTIONS]
+
+A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue
+
+Options:
+  --read-queue-addresses=[]                     Addresses to connect to the consumer queue (URLs). ($Q_READ_ADDR)
+  --read-queue-group=""                         Group used to read the messages from the queue. ($Q_READ_GROUP)
+  --read-queue-topic=""                         The topic to read the meassages from. ($Q_READ_TOPIC)
+  --read-queue-host-header="kafka"              The host header for the queue to read the meassages from. ($Q_READ_QUEUE_HOST_HEADER)
+  --read-queue-concurrent-processing=false      Whether the consumer uses concurrent processing for the messages ($Q_READ_CONCURRENT_PROCESSING)
+  --native-writer-address=""                    Address of service that writes persistently the native content ($NATIVE_RW_ADDRESS)
+  --native-writer-collections-by-origins="[]"   Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{"http://cmdb.ft.com/systems/methode-web-pub":"methode"}] ($NATIVE_RW_COLLECTIONS_BY_ORIGINS)
+  --native-writer-host-header="nativerw"        coco-specific header needed to reach the destination address ($NATIVE_RW_HOST_HEADER)
+  --content-uuid-fields=[]                      List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3 ($NATIVE_CONTENT_UUID_FIELDS)
+  --write-queue-address=""                      Address to connect to the producer queue (URL). ($Q_WRITE_ADDR)
+  --write-topic=""                              The topic to write the meassages to. ($Q_WRITE_TOPIC)
+  --write-queue-host-header="kafka"             The host header for the queue to write the meassages to. ($Q_WRITE_QUEUE_HOST_HEADER)
+
+```
 
 ## Deployment to CoCo
 - This service should be deployed in the publishing clusters.
@@ -46,4 +72,4 @@ Native Ingester
   - `https://{host}/__native-store-{type}/__gtg`
 
 Note: All API endpoints in CoCo require Authentication.
-See [service run book] (https://sites.google.com/a/ft.com/ft-technology-service-transition/home/run-book-library/native-ingester) on how to access cluster credentials.  
+See [service run book](https://dewey.ft.com/native-ingester.html) on how to access cluster credentials.  
