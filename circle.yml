@@ -10,7 +10,7 @@ test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
     - go test -race -v ./... | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
-        - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/native.out ./native
+    - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/native.out ./native
     - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/queue.out ./queue
     - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/resources.out ./resources
     - cd $CIRCLE_ARTIFACTS && sed -i '1d' *.out
