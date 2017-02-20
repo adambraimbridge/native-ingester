@@ -1,0 +1,19 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "Ito0Vram7HIDadVHl0HODOKkzeQ=",
+			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
+			"revision": "06fe2a7dbc2430a7b79f11c26be4a45638c29c38",
+			"revisionTime": "2017-02-17T17:19:54Z"
+		},
+		{
+			"checksumSHA1": "oF0Y5JErg3Rrrodj5dyJ+K17TPg=",
+			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
+			"revision": "0b18fb58928742fa21c37785e1296da07a64c56a",
+			"revisionTime": "2017-02-17T15:55:57Z"
+		}
+	],
+	"rootPath": "github.com/Financial-Times/native-ingester"
+}
