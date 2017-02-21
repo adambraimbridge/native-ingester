@@ -94,7 +94,7 @@ func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collecti
 	}
 	defer properClose(response)
 
-	if response.StatusCode != http.StatusOK {
+	if isNot2XXStatusCode(response.StatusCode) {
 		log.WithField("transaction_id", cBody.publishReference()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
 		return errors.New("Native writer returned non-200 code")
 	}
@@ -112,6 +112,10 @@ func properClose(resp *http.Response) {
 	if err != nil {
 		log.WithError(err).Warn("Couldn't close response body")
 	}
+}
+
+func isNot2XXStatusCode(statusCode int) bool {
+	return statusCode < 200 || statusCode >= 300
 }
 
 func (nw nativeWriter) ConnectivityCheck() (string, error) {

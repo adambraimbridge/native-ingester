@@ -50,7 +50,7 @@ func main() {
 	readQueueTopic := app.String(cli.StringOpt{
 		Name:   "read-queue-topic",
 		Value:  "",
-		Desc:   "The topic to read the meassages from.",
+		Desc:   "The topic to read the messages from.",
 		EnvVar: "Q_READ_TOPIC",
 	})
 	readQueueHostHeader := app.String(cli.StringOpt{
