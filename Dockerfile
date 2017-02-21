@@ -10,7 +10,6 @@ RUN apk --update add git go libc-dev \
   && cd $GOPATH/src/${REPO_PATH} \
   && BUILDINFO_PACKAGE="github.com/Financial-Times/service-status-go/buildinfo." \
   && VERSION="version=$(git describe --tag --always 2> /dev/null)" \
-  && echo here \
   && DATETIME="dateTime=$(date -u +%Y%m%d%H%M%S)" \
   && REPOSITORY="repository=$(git config --get remote.origin.url)" \
   && REVISION="revision=$(git rev-parse HEAD)" \
@@ -21,6 +20,6 @@ RUN apk --update add git go libc-dev \
   && go build -ldflags="${LDFLAGS}" \
   && mv native-ingester /native-ingester-app \
   && apk del go git bzr \
-  && rm -rf $GOPATH /var/cache/apk/*
+  && rm -rf $GOPATH /var/cache/apk/* /native-ingester
 
 CMD [ "/native-ingester-app" ]
