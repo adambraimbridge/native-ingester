@@ -53,7 +53,7 @@ func TestGetCollectionByOriginID(t *testing.T) {
 	w := NewWriter("", testCollectionsOriginIdsMap, "", p)
 
 	actualCollection, err := w.GetCollectionByOriginID(methodeOriginSystemID)
-	assert.Nil(t, err, "It should not return an error")
+	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, methodeCollection, actualCollection, "It should return the methode collection")
 
 	_, err = w.GetCollectionByOriginID("Origin-Id-that-do-not-exist")
@@ -69,7 +69,7 @@ func TestWriteContentBodyToCollectionWithSuccess(t *testing.T) {
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	err := w.WriteContentBodyToCollection(aContentBody, methodeCollection)
 
-	assert.Nil(t, err, "It should not return an error")
+	assert.NoError(t, err, "It should not return an error")
 	p.AssertExpectations(t)
 }
 
@@ -118,7 +118,7 @@ func TestConnectivityCheckSuccess(t *testing.T) {
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	msg, err := w.ConnectivityCheck()
 
-	assert.Nil(t, err, "It should not return an error")
+	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, "Native writer is good to go.", msg, "It should return a positive message")
 }
 

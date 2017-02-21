@@ -75,7 +75,7 @@ func TestExtractUUIDSuccessfully(t *testing.T) {
 		body := ContentBody{}
 		json.Unmarshal([]byte(test.msgBody), &body)
 		actualUUID, err := bodyParser.getUUID(body)
-		assert.Nil(t, err, "The parsing should not return an error")
+		assert.NoError(t, err, "The parsing should not return an error")
 		assert.Equal(t, test.expectedUUID, actualUUID, "The UUIDs should be the same")
 	}
 }

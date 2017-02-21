@@ -48,7 +48,7 @@ func TestGetContentBodySuccessfully(t *testing.T) {
 	pe := publicationEvent{aMsg}
 	body, err := pe.contentBody()
 
-	assert.Nil(t, err, "It should not return an error")
+	assert.NoError(t, err, "It should not return an error")
 	assert.Equal(t, "bar", body["foo"], "The body should contain the original data")
 	assert.Equal(t, expectedTimestamp, body["lastModified"], "The body should contain a lastModified attribute equal to the timestamp message header")
 	assert.Equal(t, expectedTID, body["publishReference"], "The body should contain the publishReference attribute equal to the message transaction ID")
