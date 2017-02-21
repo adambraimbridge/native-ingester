@@ -32,7 +32,7 @@ func init() {
 }
 
 func main() {
-	app := cli.App("Native Ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
+	app := cli.App("native-ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
 
 	//Read queue configuration
 	readQueueAddresses := app.Strings(cli.StringsOpt{
@@ -56,7 +56,7 @@ func main() {
 	readQueueHostHeader := app.String(cli.StringOpt{
 		Name:   "read-queue-host-header",
 		Value:  "kafka",
-		Desc:   "The host header for the queue to read the meassages from.",
+		Desc:   "The host header for the queue to read the messages from.",
 		EnvVar: "Q_READ_QUEUE_HOST_HEADER",
 	})
 	readQueueConcurrentProcessing := app.Bool(cli.BoolOpt{
@@ -102,14 +102,14 @@ func main() {
 	writeQueueTopic := app.String(cli.StringOpt{
 		Name:   "write-topic",
 		Value:  "",
-		Desc:   "The topic to write the meassages to.",
+		Desc:   "The topic to write the messages to.",
 		EnvVar: "Q_WRITE_TOPIC",
 	})
 	writeQueueHostHeader := app.String(cli.StringOpt{
 		Name:   "write-queue-host-header",
 		Value:  "kafka",
-		Desc:   "The host header for the queue to write the meassages to.",
-		EnvVar: "Q_WRITE_QUEUE_HOST_HEADER",
+		Desc:   "The host header for the queue to write the messages to.",
+		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
 
 	app.Action = func() {

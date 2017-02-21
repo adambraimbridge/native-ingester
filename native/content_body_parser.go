@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/jsonq"
+	uuidParser "github.com/satori/go.uuid"
 )
 
 //ContentBodyParser parses the body of native content
@@ -24,8 +25,9 @@ func NewContentBodyParser(uuidJSONPaths []string) ContentBodyParser {
 func (p contentBodyParser) getUUID(body map[string]interface{}) (string, error) {
 	jq := jsonq.NewQuery(body)
 	for _, uuidPath := range p.uuidJSONPaths {
-		uuid, err := jq.String(strings.Split(uuidPath, ".")...)
-		if err == nil && uuid != "" {
+		uuid, jsonPathErr := jq.String(strings.Split(uuidPath, ".")...)
+		_, uuidParsingError := uuidParser.FromString(uuid)
+		if jsonPathErr == nil && uuidParsingError == nil {
 			return uuid, nil
 		}
 	}
