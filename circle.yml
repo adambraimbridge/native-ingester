@@ -4,9 +4,11 @@ machine:
 dependencies:
   pre:
     - go get github.com/axw/gocov/gocov; go get github.com/matm/gocov-html; go get -u github.com/jstemmer/go-junit-report
+    - go get -u github.com/kardianos/govendor
 test:
   pre:
     - go get github.com/mattn/goveralls
+    - govendor sync
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
     - go test -race -v ./... | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml

@@ -3,16 +3,20 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "Ito0Vram7HIDadVHl0HODOKkzeQ=",
+			"checksumSHA1": "yceqWuIbFzntmSHl66OwNoP/c6E=",
 			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
-			"revision": "06fe2a7dbc2430a7b79f11c26be4a45638c29c38",
-			"revisionTime": "2017-02-17T17:19:54Z"
+			"revision": "2fbd3947c88b14549e56916ca0f9b25a152733fa",
+			"revisionTime": "2017-02-21T16:18:55Z",
+			"version": "v0.1.0-rc.1",
+			"versionExact": "v0.1.0-rc.1"
 		},
 		{
-			"checksumSHA1": "oF0Y5JErg3Rrrodj5dyJ+K17TPg=",
+			"checksumSHA1": "IYfQEg02Ki2i3vYQywnSjUzbq2c=",
 			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "0b18fb58928742fa21c37785e1296da07a64c56a",
-			"revisionTime": "2017-02-17T15:55:57Z"
+			"revision": "dad2913570352220c50073431ceecb28e35a04ff",
+			"revisionTime": "2017-02-21T16:25:02Z",
+			"version": "0.3.0-rc.1",
+			"versionExact": "0.3.0-rc.1"
 		}
 	],
 	"rootPath": "github.com/Financial-Times/native-ingester"

@@ -32,7 +32,7 @@ List all the possible options:
 ```
 $ native-ingester -v
 
-Usage: Native Ingester [OPTIONS]
+Usage: native-ingester [OPTIONS]
 
 A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue
 
