@@ -4,7 +4,11 @@ machine:
 dependencies:
   pre:
     - go get github.com/axw/gocov/gocov; go get github.com/matm/gocov-html; go get -u github.com/jstemmer/go-junit-report
-    - go get -u github.com/kardianos/govendor; govendor sync
+    - go get -u github.com/kardianos/govendor
+  override:
+    - govendor sync
+    - go get -t -d -v ./...
+    - go build -v
 test:
   pre:
     - go get github.com/mattn/goveralls
