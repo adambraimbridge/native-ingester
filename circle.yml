@@ -18,9 +18,7 @@ test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
     - go test -race -v ./... | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
-    - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/native.out ./native
-    - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/queue.out ./queue
-    - go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/resources.out ./resources
+    - go list ./... | awk -F/ '{print $4}' | xargs -I {} go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/{}.out ./{}
     - cd $CIRCLE_ARTIFACTS && sed -i '1d' *.out
     - |
       echo "mode: atomic" > $CIRCLE_ARTIFACTS/overall-coverage.result
