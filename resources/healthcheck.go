@@ -34,7 +34,7 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 
 func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 	return fthealth.Check{
-		BusinessImpact:   "Content will not reach the end of the publishing pipeline",
+		BusinessImpact:   "Content or metadata will not reach the end of the publishing pipeline",
 		Name:             "ProducerQueueProxyReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
 		Severity:         1,
