@@ -6,18 +6,18 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"encoding/json"
 
 	"io/ioutil"
+
+	"io"
 
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/golang/go/src/pkg/bytes"
 	"github.com/golang/go/src/pkg/strings"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"io"
 
 	"github.com/jmoiron/jsonq"
 )
@@ -79,7 +79,7 @@ func main() {
 	})
 	destinationCollectionsByOrigins := app.String(cli.StringOpt{
 		Name:   "destination-collections-by-origins",
-		Value:  "[]",
+		Value:  "{}",
 		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
 		EnvVar: "DEST_COLLECTIONS_BY_ORIGINS",
 	})
@@ -165,9 +165,9 @@ func handleMessage(msg consumer.Message) {
 		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
 		return
 	}
-	contents := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
+
+	contents, err := constructMessageBody(msg, tid)
+	if err != nil {
 		return
 	}
 
@@ -181,8 +181,6 @@ func handleMessage(msg consumer.Message) {
 
 	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
 	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
-
-	contents["lastModified"] = time.Now().Round(time.Millisecond)
 
 	bodyWithTimestamp, err := json.Marshal(contents)
 
@@ -216,6 +214,24 @@ func handleMessage(msg consumer.Message) {
 		return
 	}
 	infoLogger.Printf("[%s] Successfully finished processing native publish event for uuid [%s]", tid, uuid)
+}
+
+func constructMessageBody(msg consumer.Message, tid string) (map[string]interface{}, error) {
+	contents := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
+		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
+		return nil, err
+	}
+
+	lastModified, found := msg.Headers["Message-Timestamp"]
+	if !found {
+		warnLogger.Printf("Missing time stamp on message: %s", tid)
+	}
+
+	contents["lastModified"] = lastModified
+	contents["publishReference"] = tid
+
+	return contents, nil
 }
 
 func extractUuid(contents map[string]interface{}, uuidFields []string) string {
