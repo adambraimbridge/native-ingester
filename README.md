@@ -10,8 +10,10 @@ Native ingester implements the following functionality:
 ## Installation & running locally
 Installation:
 ```
-go get -u github.com/Financial-Times/native-ingester
+go get -u github.com/kardianos/govendor
+go get github.com/Financial-Times/native-ingester
 cd $GOPATH/src/github.com/Financial-Times/native-ingester
+govendor sync 
 go test ./...
 go install
 
