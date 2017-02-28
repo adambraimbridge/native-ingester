@@ -57,7 +57,7 @@ func main() {
 		Name:   "read-queue-host-header",
 		Value:  "kafka",
 		Desc:   "The host header for the queue to read the messages from.",
-		EnvVar: "Q_READ_QUEUE_HOST_HEADER",
+		EnvVar: "Q_READ_HOST_HEADER",
 	})
 	readQueueConcurrentProcessing := app.Bool(cli.BoolOpt{
 		Name:   "read-queue-concurrent-processing",
@@ -148,6 +148,9 @@ func main() {
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 		log.Infof("[Startup] Using native writer configuration: %# v", writer)
 		log.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		if messageProducer != nil {
+			log.Infof("[Startup] Producer: %# v", messageProducer)
+		}
 
 		go enableHealthCheck(messageConsumer, writer, messageProducer)
 		startMessageConsumption(messageConsumer)
