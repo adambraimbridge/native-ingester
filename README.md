@@ -13,7 +13,7 @@ Installation:
 go get -u github.com/kardianos/govendor
 go get github.com/Financial-Times/native-ingester
 cd $GOPATH/src/github.com/Financial-Times/native-ingester
-govendor sync 
+govendor sync
 go test ./...
 go install
 
@@ -32,7 +32,7 @@ $GOPATH/bin/native-ingester
 ```
 List all the possible options:
 ```
-$ native-ingester -v
+$  native-ingester -h
 
 Usage: native-ingester [OPTIONS]
 
@@ -41,17 +41,16 @@ A service to ingest native content of any type and persist it in the native stor
 Options:
   --read-queue-addresses=[]                     Addresses to connect to the consumer queue (URLs). ($Q_READ_ADDR)
   --read-queue-group=""                         Group used to read the messages from the queue. ($Q_READ_GROUP)
-  --read-queue-topic=""                         The topic to read the meassages from. ($Q_READ_TOPIC)
-  --read-queue-host-header="kafka"              The host header for the queue to read the meassages from. ($Q_READ_QUEUE_HOST_HEADER)
+  --read-queue-topic=""                         The topic to read the messages from. ($Q_READ_TOPIC)
+  --read-queue-host-header="kafka"              The host header for the queue to read the messages from. ($Q_READ_HOST_HEADER)
   --read-queue-concurrent-processing=false      Whether the consumer uses concurrent processing for the messages ($Q_READ_CONCURRENT_PROCESSING)
   --native-writer-address=""                    Address of service that writes persistently the native content ($NATIVE_RW_ADDRESS)
   --native-writer-collections-by-origins="[]"   Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{"http://cmdb.ft.com/systems/methode-web-pub":"methode"}] ($NATIVE_RW_COLLECTIONS_BY_ORIGINS)
   --native-writer-host-header="nativerw"        coco-specific header needed to reach the destination address ($NATIVE_RW_HOST_HEADER)
   --content-uuid-fields=[]                      List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3 ($NATIVE_CONTENT_UUID_FIELDS)
   --write-queue-address=""                      Address to connect to the producer queue (URL). ($Q_WRITE_ADDR)
-  --write-topic=""                              The topic to write the meassages to. ($Q_WRITE_TOPIC)
-  --write-queue-host-header="kafka"             The host header for the queue to write the meassages to. ($Q_WRITE_QUEUE_HOST_HEADER)
-
+  --write-topic=""                              The topic to write the messages to. ($Q_WRITE_TOPIC)
+  --write-queue-host-header="kafka"             The host header for the queue to write the messages to. ($Q_WRITE_HOST_HEADER)
 ```
 
 ## Deployment to CoCo
