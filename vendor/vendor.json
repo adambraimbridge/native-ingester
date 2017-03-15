@@ -19,12 +19,12 @@
 			"versionExact": "v0.1.0-rc.1"
 		},
 		{
-			"checksumSHA1": "IYfQEg02Ki2i3vYQywnSjUzbq2c=",
+			"checksumSHA1": "/kMYtkcxWV4dZNvJaEGkDUwt3TA=",
 			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "dad2913570352220c50073431ceecb28e35a04ff",
-			"revisionTime": "2017-02-21T16:25:02Z",
-			"version": "0.3.0-rc.1",
-			"versionExact": "0.3.0-rc.1"
+			"revision": "5b400c3fa227062871808d2355ad7782de69e01e",
+			"revisionTime": "2017-03-09T16:05:51Z",
+			"version": "0.3.0-rc.2",
+			"versionExact": "0.3.0-rc.2"
 		},
 		{
 			"checksumSHA1": "fqpohN7Qp2qj7TLMbUxh/cK4oH0=",

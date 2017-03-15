@@ -143,7 +143,7 @@ func main() {
 			mh.ForwardTo(messageProducer)
 		}
 
-		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, http.Client{})
+		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, &http.Client{})
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 		log.Infof("[Startup] Using native writer configuration: %# v", writer)
