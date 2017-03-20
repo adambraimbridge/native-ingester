@@ -6,116 +6,154 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"encoding/json"
 
-	"io/ioutil"
-
-	"io"
-
+	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/golang/go/src/pkg/bytes"
-	"github.com/golang/go/src/pkg/strings"
+	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/native-ingester/queue"
+	"github.com/Financial-Times/native-ingester/resources"
+	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 
-	"github.com/jmoiron/jsonq"
+	log "github.com/Sirupsen/logrus"
 )
 
-// NativeWriterConfig Holds the configuration for the Native Writer
-type NativeWriterConfig struct {
-	Address                string
-	CollectionsByOriginIds map[string]string
-	Header                 string
+func init() {
+	f := &log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: time.RFC3339Nano,
+	}
+
+	log.SetFormatter(f)
 }
 
-var uuidFields []string
-var client = http.Client{}
-var writerConfig NativeWriterConfig
-
 func main() {
-	app := cli.App("Native Ingester", "A service to ingest native content of any type and persist it in the native store")
-	sourceAddresses := app.Strings(cli.StringsOpt{
-		Name:   "source-addresses",
-		Value:  []string{},
-		Desc:   "Addresses used by the queue consumer to connect to the queue",
-		EnvVar: "SRC_ADDR",
+	app := cli.App("native-ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
+
+	//Read queue configuration
+	readQueueAddresses := app.Strings(cli.StringsOpt{
+		Name:   "read-queue-addresses",
+		Value:  nil,
+		Desc:   "Addresses to connect to the consumer queue (URLs).",
+		EnvVar: "Q_READ_ADDR",
 	})
-	sourceGroup := app.String(cli.StringOpt{
-		Name:   "source-group",
+	readQueueGroup := app.String(cli.StringOpt{
+		Name:   "read-queue-group",
 		Value:  "",
-		Desc:   "Group used to read the messages from the queue",
-		EnvVar: "SRC_GROUP",
+		Desc:   "Group used to read the messages from the queue.",
+		EnvVar: "Q_READ_GROUP",
 	})
-	sourceTopic := app.String(cli.StringOpt{
-		Name:   "source-topic",
+	readQueueTopic := app.String(cli.StringOpt{
+		Name:   "read-queue-topic",
 		Value:  "",
-		Desc:   "The topic to read the meassages from",
-		EnvVar: "SRC_TOPIC",
+		Desc:   "The topic to read the messages from.",
+		EnvVar: "Q_READ_TOPIC",
 	})
-	sourceQueue := app.String(cli.StringOpt{
-		Name:   "source-queue",
-		Value:  "",
-		Desc:   "The queue to read the messages from",
-		EnvVar: "SRC_QUEUE",
+	readQueueHostHeader := app.String(cli.StringOpt{
+		Name:   "read-queue-host-header",
+		Value:  "kafka",
+		Desc:   "The host header for the queue to read the messages from.",
+		EnvVar: "Q_READ_HOST_HEADER",
 	})
-	sourceUUIDFields := app.Strings(cli.StringsOpt{
-		Name:   "source-uuid-fields",
-		Value:  []string{},
-		Desc:   "List of JSONPaths to try for extracting the uuid from native message. e.g. uuid,post.uuid,data.uuidv3",
-		EnvVar: "SRC_UUID_FIELDS",
-	})
-	sourceConcurrentProcessing := app.Bool(cli.BoolOpt{
-		Name:   "source-concurrent-processing",
+	readQueueConcurrentProcessing := app.Bool(cli.BoolOpt{
+		Name:   "read-queue-concurrent-processing",
 		Value:  false,
 		Desc:   "Whether the consumer uses concurrent processing for the messages",
-		EnvVar: "SRC_CONCURRENT_PROCESSING",
+		EnvVar: "Q_READ_CONCURRENT_PROCESSING",
 	})
-	destinationAddress := app.String(cli.StringOpt{
-		Name:   "destination-address",
+
+	// Native writer configuration
+	nativeWriterAddress := app.String(cli.StringOpt{
+		Name:   "native-writer-address",
 		Value:  "",
-		Desc:   "Where to persist the native content",
-		EnvVar: "DEST_ADDRESS",
+		Desc:   "Address of service that writes persistently the native content",
+		EnvVar: "NATIVE_RW_ADDRESS",
 	})
-	destinationCollectionsByOrigins := app.String(cli.StringOpt{
-		Name:   "destination-collections-by-origins",
-		Value:  "{}",
+	nativeWriterCollectionsByOrigins := app.String(cli.StringOpt{
+		Name:   "native-writer-collections-by-origins",
+		Value:  "[]",
 		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
-		EnvVar: "DEST_COLLECTIONS_BY_ORIGINS",
+		EnvVar: "NATIVE_RW_COLLECTIONS_BY_ORIGINS",
 	})
-	destinationHeader := app.String(cli.StringOpt{
-		Name:   "destination-header",
+	nativeWriterHostHeader := app.String(cli.StringOpt{
+		Name:   "native-writer-host-header",
 		Value:  "nativerw",
 		Desc:   "coco-specific header needed to reach the destination address",
-		EnvVar: "DEST_HEADER",
+		EnvVar: "NATIVE_RW_HOST_HEADER",
+	})
+	contentUUIDfields := app.Strings(cli.StringsOpt{
+		Name:   "content-uuid-fields",
+		Value:  []string{},
+		Desc:   "List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3",
+		EnvVar: "NATIVE_CONTENT_UUID_FIELDS",
+	})
+
+	// Write Queue configuration
+	writeQueueAddress := app.String(cli.StringOpt{
+		Name:   "write-queue-address",
+		Value:  "",
+		Desc:   "Address to connect to the producer queue (URL).",
+		EnvVar: "Q_WRITE_ADDR",
+	})
+	writeQueueTopic := app.String(cli.StringOpt{
+		Name:   "write-topic",
+		Value:  "",
+		Desc:   "The topic to write the messages to.",
+		EnvVar: "Q_WRITE_TOPIC",
+	})
+	writeQueueHostHeader := app.String(cli.StringOpt{
+		Name:   "write-queue-host-header",
+		Value:  "kafka",
+		Desc:   "The host header for the queue to write the messages to.",
+		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
 
 	app.Action = func() {
-		uuidFields = *sourceUUIDFields
+
 		srcConf := consumer.QueueConfig{
-			Addrs:                *sourceAddresses,
-			Group:                *sourceGroup,
-			Topic:                *sourceTopic,
-			Queue:                *sourceQueue,
-			ConcurrentProcessing: *sourceConcurrentProcessing,
+			Addrs:                *readQueueAddresses,
+			Group:                *readQueueGroup,
+			Topic:                *readQueueTopic,
+			Queue:                *readQueueHostHeader,
+			ConcurrentProcessing: *readQueueConcurrentProcessing,
 		}
-		initLogs(os.Stdout, os.Stdout, os.Stderr)
+
 		var collectionsByOriginIds map[string]string
-		if err := json.Unmarshal([]byte(*destinationCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			errorLogger.Panicf("Couldn't parse JSON for originId to collection map: %v\n", err)
-		}
-		nativeWriterConfig := NativeWriterConfig{
-			Address:                *destinationAddress,
-			CollectionsByOriginIds: collectionsByOriginIds,
-			Header:                 *destinationHeader,
+		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
+			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
 		}
 
-		writerConfig = nativeWriterConfig
-		infoLogger.Printf("[Startup] Using source configuration: %# v", srcConf)
-		infoLogger.Printf("[Startup] Using native writer configuration: %# v", nativeWriterConfig)
+		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
+		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
 
-		go enableHealthChecks(srcConf, nativeWriterConfig)
-		readMessages(srcConf)
+		mh := queue.NewMessageHandler(writer)
+
+		var messageProducer producer.MessageProducer
+		if *writeQueueAddress != "" {
+			producerConfig := producer.MessageProducerConfig{
+				Addr:  *writeQueueAddress,
+				Topic: *writeQueueTopic,
+				Queue: *writeQueueHostHeader,
+			}
+			messageProducer = producer.NewMessageProducer(producerConfig)
+			mh.ForwardTo(messageProducer)
+		}
+
+		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, &http.Client{})
+		log.Infof("[Startup] Consumer: %# v", messageConsumer)
+		log.Infof("[Startup] Using source configuration: %# v", srcConf)
+		log.Infof("[Startup] Using native writer configuration: %# v", writer)
+		log.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		if messageProducer != nil {
+			log.Infof("[Startup] Producer: %# v", messageProducer)
+		}
+
+		go enableHealthCheck(messageConsumer, writer, messageProducer)
+		startMessageConsumption(messageConsumer)
 	}
 
 	err := app.Run(os.Args)
@@ -124,25 +162,23 @@ func main() {
 	}
 }
 
-func enableHealthChecks(srcConf consumer.QueueConfig, nativeWriteConfig NativeWriterConfig) {
-	healthCheck := &Healthcheck{
-		client:           http.Client{},
-		srcConf:          srcConf,
-		nativeWriterConf: nativeWriteConfig}
-	router := mux.NewRouter()
-	router.HandleFunc("/__health", healthCheck.checkHealth())
-	router.HandleFunc("/__gtg", healthCheck.gtg)
-	http.Handle("/", router)
+func enableHealthCheck(c consumer.MessageConsumer, nw native.Writer, p producer.MessageProducer) {
+	hc := resources.NewHealthCheck(c, nw, p)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/__health", hc.Handler())
+	r.HandleFunc(httphandlers.GTGPath, hc.GTG).Methods("GET")
+	r.HandleFunc(httphandlers.BuildInfoPath, httphandlers.BuildInfoHandler).Methods("GET")
+	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
+
+	http.Handle("/", r)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		errorLogger.Panicf("Couldn't set up HTTP listener: %v\n", err)
+		log.WithError(err).Panic("Couldn't set up HTTP listener")
 	}
 }
 
-func readMessages(config consumer.QueueConfig) {
-	messageConsumer := consumer.NewConsumer(config, handleMessage, http.Client{})
-	infoLogger.Printf("[Startup] Consumer: %# v", messageConsumer)
-
+func startMessageConsumption(messageConsumer consumer.MessageConsumer) {
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 
@@ -156,102 +192,4 @@ func readMessages(config consumer.QueueConfig) {
 	<-ch
 	messageConsumer.Stop()
 	consumerWaitGroup.Wait()
-}
-
-func handleMessage(msg consumer.Message) {
-	tid := msg.Headers["X-Request-Id"]
-	coll := writerConfig.CollectionsByOriginIds[strings.TrimSpace(msg.Headers["Origin-System-Id"])]
-	if coll == "" {
-		infoLogger.Printf("[%s] Skipping content because of not whitelisted Origin-System-Id: %s", tid, msg.Headers["Origin-System-Id"])
-		return
-	}
-
-	contents, err := constructMessageBody(msg, tid)
-	if err != nil {
-		return
-	}
-
-	infoLogger.Printf("uuidFields: %v", uuidFields)
-	uuid := extractUuid(contents, uuidFields)
-	if uuid == "" {
-		errorLogger.Printf("[%s] Error extracting uuid. Ignoring message.", tid)
-		return
-	}
-	infoLogger.Printf("[%s] Start processing native publish event for uuid [%s]", tid, uuid)
-
-	requestURL := writerConfig.Address + "/" + coll + "/" + uuid
-	infoLogger.Printf("[%s] Request URL: [%s]", tid, requestURL)
-
-	bodyWithTimestamp, err := json.Marshal(contents)
-
-	if err != nil {
-		errorLogger.Printf("[%s] Error marshalling message: [%v]", tid, err.Error())
-		return
-	}
-
-	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(bodyWithTimestamp))
-	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
-		return
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-Request-Id", tid)
-	if len(strings.TrimSpace(writerConfig.Header)) > 0 {
-		request.Host = writerConfig.Header
-	}
-
-	response, err := client.Do(request)
-
-	if err != nil {
-		errorLogger.Printf("[%s] Error caling writer at [%s] Ignoring message.: [%v]", tid, requestURL, err.Error())
-		return
-	}
-	defer properClose(response)
-
-	if response.StatusCode != http.StatusOK {
-		errorLogger.Printf("[%s] Caller returned non-200 code: [%v] . Ignoring message.", tid, response.StatusCode)
-		return
-	}
-	infoLogger.Printf("[%s] Successfully finished processing native publish event for uuid [%s]", tid, uuid)
-}
-
-func constructMessageBody(msg consumer.Message, tid string) (map[string]interface{}, error) {
-	contents := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(msg.Body), &contents); err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling message. Ignoring message. : [%v]", tid, err.Error())
-		return nil, err
-	}
-
-	lastModified, found := msg.Headers["Message-Timestamp"]
-	if !found {
-		warnLogger.Printf("Missing time stamp on message: %s", tid)
-	}
-
-	contents["lastModified"] = lastModified
-	contents["publishReference"] = tid
-
-	return contents, nil
-}
-
-func extractUuid(contents map[string]interface{}, uuidFields []string) string {
-	jq := jsonq.NewQuery(contents)
-	for _, uuidField := range uuidFields {
-		uuid, err := jq.String(strings.Split(uuidField, ".")...)
-		if err == nil && uuid != "" {
-			return uuid
-		}
-	}
-	return ""
-}
-
-func properClose(resp *http.Response) {
-	_, err := io.Copy(ioutil.Discard, resp.Body)
-	if err != nil {
-		warnLogger.Printf("Couldn't read response body: %v.", err)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		warnLogger.Printf("Couldn't close response body: %v.", err)
-	}
 }

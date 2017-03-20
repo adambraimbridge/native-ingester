@@ -2,3 +2,6 @@
 native-ingester.exe
 native-ingester
 /.project
+
+/vendor/*
+!/vendor/vendor.json
