@@ -13,18 +13,18 @@
 		{
 			"checksumSHA1": "yceqWuIbFzntmSHl66OwNoP/c6E=",
 			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
-			"revision": "2fbd3947c88b14549e56916ca0f9b25a152733fa",
-			"revisionTime": "2017-02-21T16:18:55Z",
-			"version": "v0.1.0-rc.1",
-			"versionExact": "v0.1.0-rc.1"
+			"revision": "163efbf93f1a2ba839b317d26e37426bcfa3850a",
+			"revisionTime": "2017-03-20T10:55:12Z",
+			"version": "v0.1.0",
+			"versionExact": "v0.1.0"
 		},
 		{
 			"checksumSHA1": "/kMYtkcxWV4dZNvJaEGkDUwt3TA=",
 			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "5b400c3fa227062871808d2355ad7782de69e01e",
-			"revisionTime": "2017-03-09T16:05:51Z",
-			"version": "0.3.0-rc.2",
-			"versionExact": "0.3.0-rc.2"
+			"revision": "4e173298922ba4c10721b1b5b3e0d35be7f162e9",
+			"revisionTime": "2017-03-20T10:34:32Z",
+			"version": "0.3.0",
+			"versionExact": "0.3.0"
 		},
 		{
 			"checksumSHA1": "fqpohN7Qp2qj7TLMbUxh/cK4oH0=",
