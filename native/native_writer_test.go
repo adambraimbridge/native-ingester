@@ -75,7 +75,7 @@ func TestWriteMessageToCollectionWithSuccess(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withoutNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewWriterMessage("{}", aTimestamp, "", publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, "", publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -91,7 +91,7 @@ func TestWriteMessageWithHashToCollectionWithSuccess(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewWriterMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -107,7 +107,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewWriterMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -123,7 +123,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t
 	nws := setupMockNativeWriterService(t, 500, withoutNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewWriterMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -137,7 +137,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t 
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
 
-	msg, err := NewWriterMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter("http://an-address.com", testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -200,8 +200,8 @@ func (p *ContentBodyParserMock) getUUID(body map[string]interface{}) (string, er
 	return args.String(0), args.Error(1)
 }
 
-func TestBuildWriterMessageSuccess(t *testing.T) {
-	msg, err := NewWriterMessage(`{"foo":"bar"}`, aTimestamp, aHash, publishRef)
+func TestBuildNativeMessageSuccess(t *testing.T) {
+	msg, err := NewNativeMessage(`{"foo":"bar"}`, aTimestamp, aHash, publishRef)
 	assert.NoError(t, err, "It should return an error in creating a new message")
 	assert.Equal(t, msg.body["foo"], "bar", "The body should contain the original attributes")
 	assert.Equal(t, msg.body["lastModified"], aTimestamp, "The body should contain the additiona timestamp")
@@ -210,7 +210,7 @@ func TestBuildWriterMessageSuccess(t *testing.T) {
 	assert.Equal(t, msg.transactionID, publishRef, "The message should contain the publish reference")
 }
 
-func TestBuildWriterMessageFailure(t *testing.T) {
-	_, err := NewWriterMessage("__INVALID_BODY__", aTimestamp, aHash, publishRef)
+func TestBuildNativeMessageFailure(t *testing.T) {
+	_, err := NewNativeMessage("__INVALID_BODY__", aTimestamp, aHash, publishRef)
 	assert.EqualError(t, err, "invalid character '_' looking for beginning of value", "It should return an error in creating a new message")
 }

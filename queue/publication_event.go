@@ -21,19 +21,19 @@ func (pe *publicationEvent) originSystemID() string {
 	return strings.TrimSpace(pe.Headers["Origin-System-Id"])
 }
 
-func (pe *publicationEvent) nativeWriterMessage() (native.WriterMessage, error) {
+func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
 	if !found {
-		return native.WriterMessage{}, errors.New("Publish event does not contain timestamp")
+		return native.NativeMessage{}, errors.New("Publish event does not contain timestamp")
 	}
 
 	nativeHash := pe.Headers["Native-Hash"]
 
-	msg, err := native.NewWriterMessage(pe.Body, timestamp, nativeHash, pe.transactionID())
+	msg, err := native.NewNativeMessage(pe.Body, timestamp, nativeHash, pe.transactionID())
 
 	if err != nil {
-		return native.WriterMessage{}, err
+		return native.NativeMessage{}, err
 	}
 
 	return msg, nil

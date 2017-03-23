@@ -24,7 +24,7 @@ func NewMessageHandler(w native.Writer) *MessageHandler {
 func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 	pubEvent := publicationEvent{msg}
 
-	writerMsg, err := pubEvent.nativeWriterMessage()
+	writerMsg, err := pubEvent.nativeMessage()
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", pubEvent.transactionID()).Error("Error unmarshalling content body from publication event. Ignoring message.")
 		return

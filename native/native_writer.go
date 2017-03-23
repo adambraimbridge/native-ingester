@@ -19,7 +19,7 @@ const nativeHashHeader = "X-Native-Hash"
 // Writer provides the functionalities to write in the native store
 type Writer interface {
 	GetCollectionByOriginID(originID string) (string, error)
-	WriteToCollection(msg WriterMessage, collection string) error
+	WriteToCollection(msg NativeMessage, collection string) error
 	ConnectivityCheck() (string, error)
 }
 
@@ -57,7 +57,7 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 	return nw.collections.getCollectionByOriginID(originID)
 }
 
-func (nw *nativeWriter) WriteToCollection(msg WriterMessage, collection string) error {
+func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) error {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
 		log.WithField("transaction_id", msg.transactionID).WithError(err).Error("Error extracting uuid. Ignoring message.")
@@ -141,24 +141,24 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 	return "Native writer is good to go.", nil
 }
 
-// WriterMessage is the message accepted by the native writer
-type WriterMessage struct {
+// NativeMessage is the message accepted by the native writer
+type NativeMessage struct {
 	body          map[string]interface{}
 	hash          string
 	transactionID string
 }
 
-// NewWriterMessage returns a new instance of a WriterMessage
-func NewWriterMessage(contentBody string, timestamp string, nativeHash string, transactionID string) (WriterMessage, error) {
+// NewNativeMessage returns a new instance of a NativeMessage
+func NewNativeMessage(contentBody string, timestamp string, nativeHash string, transactionID string) (NativeMessage, error) {
 	body := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(contentBody), &body); err != nil {
-		return WriterMessage{}, err
+		return NativeMessage{}, err
 	}
 
 	body["lastModified"] = timestamp
 	body["publishReference"] = transactionID
 
-	msg := WriterMessage{body, nativeHash, transactionID}
+	msg := NativeMessage{body, nativeHash, transactionID}
 
 	return msg, nil
 }

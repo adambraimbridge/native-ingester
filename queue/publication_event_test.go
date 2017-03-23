@@ -44,23 +44,23 @@ func TestGetOriginSystemID(t *testing.T) {
 	assert.Equal(t, expectedOriginSystemID, actualOriginSystemID, "The Origin-System-Id shoud be the same of a consumer message")
 }
 
-func TestGetNativeWriterMessageSuccessfully(t *testing.T) {
+func TestGetNativeMessageSuccessfully(t *testing.T) {
 	pe := publicationEvent{aMsg}
-	_, err := pe.nativeWriterMessage()
+	_, err := pe.nativeMessage()
 
 	assert.NoError(t, err, "It should not return an error")
 }
 
-func TestGetNativeWriterMessageFailBecauseBadBody(t *testing.T) {
+func TestGetNativeMessageFailBecauseBadBody(t *testing.T) {
 	pe := publicationEvent{aMsgWithBadBody}
-	_, err := pe.nativeWriterMessage()
+	_, err := pe.nativeMessage()
 
 	assert.EqualError(t, err, "invalid character 'I' looking for beginning of value", "It should return an error")
 }
 
-func TestGetCNativeWriterMessageFailBecauseMissingTimstamp(t *testing.T) {
+func TestGetCNativeNativeMessageFailBecauseMissingTimstamp(t *testing.T) {
 	pe := publicationEvent{aMsgWithoutTimestamp}
-	_, err := pe.nativeWriterMessage()
+	_, err := pe.nativeMessage()
 
 	assert.EqualError(t, err, "Publish event does not contain timestamp", "It should return an error")
 }
