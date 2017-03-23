@@ -14,10 +14,12 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+const nativeHashHeader = "X-Native-Hash"
+
 // Writer provides the functionalities to write in the native store
 type Writer interface {
 	GetCollectionByOriginID(originID string) (string, error)
-	WriteContentBodyToCollection(cBody ContentBody, collection string) error
+	WriteToCollection(msg WriterMessage, collection string) error
 	ConnectivityCheck() (string, error)
 }
 
@@ -55,32 +57,36 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 	return nw.collections.getCollectionByOriginID(originID)
 }
 
-func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collection string) error {
-	contentUUID, err := nw.bodyParser.getUUID(cBody)
+func (nw *nativeWriter) WriteToCollection(msg WriterMessage, collection string) error {
+	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		log.WithField("transaction_id", cBody.publishReference()).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		log.WithField("transaction_id", msg.transactionID).WithError(err).Error("Error extracting uuid. Ignoring message.")
 		return err
 	}
-	log.WithField("transaction_id", cBody.publishReference()).WithField("uuid", contentUUID).Info("Start processing native publish event")
+	log.WithField("transaction_id", msg.transactionID).WithField("uuid", contentUUID).Info("Start processing native publish event")
 
-	cBodyAsJSON, err := json.Marshal(cBody)
+	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", cBody.publishReference()).Error("Error marshalling message")
+		log.WithError(err).WithField("transaction_id", msg.transactionID).Error("Error marshalling message")
 		return err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	log.WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Info("Built request URL for native writer")
+	log.WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Info("Built request URL for native writer")
 
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return err
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-Request-Id", cBody.publishReference())
+	request.Header.Set("X-Request-Id", msg.transactionID)
+
+	if msg.hash != "" {
+		request.Header.Set(nativeHashHeader, msg.hash)
+	}
 
 	if len(strings.TrimSpace(nw.hostHeader)) > 0 {
 		request.Host = nw.hostHeader
@@ -89,17 +95,17 @@ func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collecti
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return err
 	}
 	defer properClose(response)
 
 	if isNot2XXStatusCode(response.StatusCode) {
-		log.WithField("transaction_id", cBody.publishReference()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
+		log.WithField("transaction_id", msg.transactionID).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
 		return errors.New("Native writer returned non-200 code")
 	}
 
-	log.WithField("transaction_id", cBody.publishReference()).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
+	log.WithField("transaction_id", msg.transactionID).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
 	return nil
 }
 
@@ -133,4 +139,26 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 		return "Native writer is not good to go.", fmt.Errorf("GTG HTTP status code is %v", resp.StatusCode)
 	}
 	return "Native writer is good to go.", nil
+}
+
+// WriterMessage is the message accepted by the native writer
+type WriterMessage struct {
+	body          map[string]interface{}
+	hash          string
+	transactionID string
+}
+
+// NewWriterMessage returns a new instance of a WriterMessage
+func NewWriterMessage(contentBody string, timestamp string, nativeHash string, transactionID string) (WriterMessage, error) {
+	body := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(contentBody), &body); err != nil {
+		return WriterMessage{}, err
+	}
+
+	body["lastModified"] = timestamp
+	body["publishReference"] = transactionID
+
+	msg := WriterMessage{body, nativeHash, transactionID}
+
+	return msg, nil
 }

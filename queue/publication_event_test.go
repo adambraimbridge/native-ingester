@@ -44,26 +44,23 @@ func TestGetOriginSystemID(t *testing.T) {
 	assert.Equal(t, expectedOriginSystemID, actualOriginSystemID, "The Origin-System-Id shoud be the same of a consumer message")
 }
 
-func TestGetContentBodySuccessfully(t *testing.T) {
+func TestGetNativeWriterMessageSuccessfully(t *testing.T) {
 	pe := publicationEvent{aMsg}
-	body, err := pe.contentBody()
+	_, err := pe.nativeWriterMessage()
 
 	assert.NoError(t, err, "It should not return an error")
-	assert.Equal(t, "bar", body["foo"], "The body should contain the original data")
-	assert.Equal(t, expectedTimestamp, body["lastModified"], "The body should contain a lastModified attribute equal to the timestamp message header")
-	assert.Equal(t, expectedTID, body["publishReference"], "The body should contain the publishReference attribute equal to the message transaction ID")
 }
 
-func TestGetContentBodyFailBecauseBadBody(t *testing.T) {
+func TestGetNativeWriterMessageFailBecauseBadBody(t *testing.T) {
 	pe := publicationEvent{aMsgWithBadBody}
-	_, err := pe.contentBody()
+	_, err := pe.nativeWriterMessage()
 
 	assert.EqualError(t, err, "invalid character 'I' looking for beginning of value", "It should return an error")
 }
 
-func TestGetContentBodyFailBecauseMissingTimstamp(t *testing.T) {
+func TestGetCNativeWriterMessageFailBecauseMissingTimstamp(t *testing.T) {
 	pe := publicationEvent{aMsgWithoutTimestamp}
-	_, err := pe.contentBody()
+	_, err := pe.nativeWriterMessage()
 
 	assert.EqualError(t, err, "Publish event does not contain timestamp", "It should return an error")
 }

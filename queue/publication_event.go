@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"encoding/json"
 	"errors"
 	"strings"
 
@@ -22,20 +21,22 @@ func (pe *publicationEvent) originSystemID() string {
 	return strings.TrimSpace(pe.Headers["Origin-System-Id"])
 }
 
-func (pe *publicationEvent) contentBody() (native.ContentBody, error) {
-	body := make(native.ContentBody)
-	if err := json.Unmarshal([]byte(pe.Body), &body); err != nil {
-		return native.ContentBody{}, err
-	}
+func (pe *publicationEvent) nativeWriterMessage() (native.WriterMessage, error) {
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
 	if !found {
-		return native.ContentBody{}, errors.New("Publish event does not contain timestamp")
+		return native.WriterMessage{}, errors.New("Publish event does not contain timestamp")
 	}
-	body["lastModified"] = timestamp
-	body["publishReference"] = pe.transactionID()
 
-	return body, nil
+	nativeHash := pe.Headers["Native-Hash"]
+
+	msg, err := native.NewWriterMessage(pe.Body, timestamp, nativeHash, pe.transactionID())
+
+	if err != nil {
+		return native.WriterMessage{}, err
+	}
+
+	return msg, nil
 }
 
 func (pe *publicationEvent) producerMsg() producer.Message {
