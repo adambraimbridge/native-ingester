@@ -67,6 +67,7 @@ func TestGetCollectionByOriginID(t *testing.T) {
 
 	_, err = w.GetCollectionByOriginID("Origin-Id-that-do-not-exist")
 	assert.EqualError(t, err, "Collection not found", "It should return a collection not found error")
+	p.AssertExpectations(t)
 }
 
 func TestWriteMessageToCollectionWithSuccess(t *testing.T) {

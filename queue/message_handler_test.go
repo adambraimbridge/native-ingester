@@ -45,7 +45,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 	mh.HandleMessage(goodMsg)
 
 	w.AssertExpectations(t)
-	p.AssertNotCalled(t, "SendMessage", mock.AnythingOfType("string"), mock.AnythingOfType("producer.Message"))
+	p.AssertExpectations(t)
 }
 
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
@@ -66,8 +66,6 @@ func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 
 func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 	w := new(WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return(nil)
 
 	p := new(ProducerMock)
 
@@ -75,9 +73,8 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 	mh.ForwardTo(p)
 	mh.HandleMessage(badBodyMsg)
 
-	w.AssertNotCalled(t, "GetCollectionByOriginID", mock.AnythingOfType("string"))
-	w.AssertNotCalled(t, "WriteToCollection", mock.AnythingOfType("native.NativeMessage"), mock.AnythingOfType("string"))
-	p.AssertNotCalled(t, "SendMessage", mock.AnythingOfType("string"), mock.AnythingOfType("producer.Message"))
+	w.AssertExpectations(t)
+	p.AssertExpectations(t)
 }
 
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
@@ -90,8 +87,8 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
-	w.AssertNotCalled(t, "WriteContentBodyToCollection", mock.AnythingOfType("native.ContentBody"), mock.AnythingOfType("string"))
-	p.AssertNotCalled(t, "SendMessage", mock.AnythingOfType("string"), mock.AnythingOfType("producer.Message"))
+	w.AssertExpectations(t)
+	p.AssertExpectations(t)
 }
 
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
@@ -106,7 +103,7 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 	mh.HandleMessage(goodMsg)
 
 	w.AssertExpectations(t)
-	p.AssertNotCalled(t, "SendMessage", mock.AnythingOfType("string"), mock.AnythingOfType("producer.Message"))
+	p.AssertExpectations(t)
 }
 
 func TestForwardFailBecauseOfProducer(t *testing.T) {
