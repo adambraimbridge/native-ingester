@@ -28,12 +28,15 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 		return native.NativeMessage{}, errors.New("Publish event does not contain timestamp")
 	}
 
-	nativeHash := pe.Headers["Native-Hash"]
-
-	msg, err := native.NewNativeMessage(pe.Body, timestamp, nativeHash, pe.transactionID())
+	msg, err := native.NewNativeMessage(pe.Body, timestamp, pe.transactionID())
 
 	if err != nil {
 		return native.NativeMessage{}, err
+	}
+
+	nativeHash, found := pe.Headers["Native-Hash"]
+	if found {
+		msg.AddHashHeader(nativeHash)
 	}
 
 	return msg, nil

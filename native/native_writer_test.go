@@ -76,7 +76,7 @@ func TestWriteMessageToCollectionWithSuccess(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withoutNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewNativeMessage("{}", aTimestamp, "", publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
@@ -92,8 +92,9 @@ func TestWriteMessageWithHashToCollectionWithSuccess(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
+	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	err = w.WriteToCollection(msg, methodeCollection)
@@ -108,8 +109,9 @@ func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
 	nws := setupMockNativeWriterService(t, 200, withNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
+	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	err = w.WriteToCollection(msg, methodeCollection)
@@ -124,8 +126,9 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t
 	nws := setupMockNativeWriterService(t, 500, withoutNativeHashHeader)
 	defer nws.Close()
 
-	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
+	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	err = w.WriteToCollection(msg, methodeCollection)
@@ -138,8 +141,9 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t 
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
 
-	msg, err := NewNativeMessage("{}", aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage("{}", aTimestamp, publishRef)
 	assert.NoError(t, err, "It should not return an error by creating a message")
+	msg.AddHashHeader(aHash)
 
 	w := NewWriter("http://an-address.com", testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	err = w.WriteToCollection(msg, methodeCollection)
@@ -202,16 +206,18 @@ func (p *ContentBodyParserMock) getUUID(body map[string]interface{}) (string, er
 }
 
 func TestBuildNativeMessageSuccess(t *testing.T) {
-	msg, err := NewNativeMessage(`{"foo":"bar"}`, aTimestamp, aHash, publishRef)
+	msg, err := NewNativeMessage(`{"foo":"bar"}`, aTimestamp, publishRef)
 	assert.NoError(t, err, "It should return an error in creating a new message")
+	msg.AddHashHeader(aHash)
+
 	assert.Equal(t, msg.body["foo"], "bar", "The body should contain the original attributes")
 	assert.Equal(t, msg.body["lastModified"], aTimestamp, "The body should contain the additiona timestamp")
 	assert.Equal(t, msg.body["publishReference"], publishRef, "The body should contain the publish reference")
-	assert.Equal(t, msg.hash, aHash, "The message should contain the hash")
-	assert.Equal(t, msg.transactionID, publishRef, "The message should contain the publish reference")
+	assert.Equal(t, msg.headers[nativeHashHeader], aHash, "The message should contain the hash")
+	assert.Equal(t, msg.transactionID(), publishRef, "The message should contain the publish reference")
 }
 
 func TestBuildNativeMessageFailure(t *testing.T) {
-	_, err := NewNativeMessage("__INVALID_BODY__", aTimestamp, aHash, publishRef)
+	_, err := NewNativeMessage("__INVALID_BODY__", aTimestamp, publishRef)
 	assert.EqualError(t, err, "invalid character '_' looking for beginning of value", "It should return an error in creating a new message")
 }

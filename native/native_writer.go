@@ -15,6 +15,7 @@ import (
 )
 
 const nativeHashHeader = "X-Native-Hash"
+const transactionIDHeader = "X-Request-Id"
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
@@ -73,19 +74,18 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	log.WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Info("Built request URL for native writer")
+	log.WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Info("Built request URL for native writer")
 
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return err
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("X-Request-Id", msg.transactionID)
 
-	if msg.hash != "" {
-		request.Header.Set(nativeHashHeader, msg.hash)
+	for header, value := range msg.headers {
+		request.Header.Set(header, value)
 	}
 
 	if len(strings.TrimSpace(nw.hostHeader)) > 0 {
@@ -143,13 +143,12 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 
 // NativeMessage is the message accepted by the native writer
 type NativeMessage struct {
-	body          map[string]interface{}
-	hash          string
-	transactionID string
+	body    map[string]interface{}
+	headers map[string]string
 }
 
 // NewNativeMessage returns a new instance of a NativeMessage
-func NewNativeMessage(contentBody string, timestamp string, nativeHash string, transactionID string) (NativeMessage, error) {
+func NewNativeMessage(contentBody string, timestamp string, transactionID string) (NativeMessage, error) {
 	body := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(contentBody), &body); err != nil {
 		return NativeMessage{}, err
@@ -158,7 +157,17 @@ func NewNativeMessage(contentBody string, timestamp string, nativeHash string, t
 	body["lastModified"] = timestamp
 	body["publishReference"] = transactionID
 
-	msg := NativeMessage{body, nativeHash, transactionID}
+	msg := NativeMessage{body, make(map[string]string)}
+	msg.headers[transactionIDHeader] = transactionID
 
 	return msg, nil
+}
+
+//AddHashHeader adds the hash of the native content as a header
+func (msg *NativeMessage) AddHashHeader(hash string) {
+	msg.headers[nativeHashHeader] = hash
+}
+
+func (msg *NativeMessage) transactionID() string {
+	return msg.headers[transactionIDHeader]
 }
