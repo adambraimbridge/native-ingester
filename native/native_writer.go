@@ -12,12 +12,14 @@ import (
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	log "github.com/Sirupsen/logrus"
+	"github.com/opentracing/opentracing-go"
+	"context"
 )
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
 	GetCollectionByOriginID(originID string) (string, error)
-	WriteContentBodyToCollection(cBody ContentBody, collection string) error
+	WriteContentBodyToCollection(ctx context.Context, cBody ContentBody, collection string) error
 	ConnectivityCheck() (string, error)
 }
 
@@ -55,7 +57,7 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 	return nw.collections.getCollectionByOriginID(originID)
 }
 
-func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collection string) error {
+func (nw *nativeWriter) WriteContentBodyToCollection(ctx context.Context, cBody ContentBody, collection string) error {
 	contentUUID, err := nw.bodyParser.getUUID(cBody)
 	if err != nil {
 		log.WithField("transaction_id", cBody.publishReference()).WithError(err).Error("Error extracting uuid. Ignoring message.")
@@ -77,6 +79,17 @@ func (nw *nativeWriter) WriteContentBodyToCollection(cBody ContentBody, collecti
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", cBody.publishReference()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return err
+	}
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		sp := opentracing.StartSpan(
+			"native-writer-client",
+			opentracing.ChildOf(span.Context()))
+		defer sp.Finish()
+		opentracing.GlobalTracer().Inject(
+			sp.Context(),
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(request.Header))
 	}
 
 	request.Header.Set("Content-Type", "application/json")

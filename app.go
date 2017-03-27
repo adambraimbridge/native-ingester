@@ -16,11 +16,15 @@ import (
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
+	tracing "github.com/Financial-Times/go-fttracing"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	"github.com/opentracing/opentracing-go"
 
 	log "github.com/Sirupsen/logrus"
 )
+
+
 
 func init() {
 	f := &log.TextFormatter{
@@ -29,6 +33,7 @@ func init() {
 	}
 
 	log.SetFormatter(f)
+	opentracing.InitGlobalTracer(tracing.NewTracer("native-ingester", "0.0.0.0:0", "prod"))
 }
 
 func main() {

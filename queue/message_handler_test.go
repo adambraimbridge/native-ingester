@@ -12,6 +12,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	testLog "github.com/Sirupsen/logrus/hooks/test"
+	"context"
 )
 
 const methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
@@ -137,7 +138,7 @@ func (w WriterMock) GetCollectionByOriginID(originID string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (w WriterMock) WriteContentBodyToCollection(cBody native.ContentBody, collection string) error {
+func (w WriterMock) WriteContentBodyToCollection(ctx context.Context, cBody native.ContentBody, collection string) error {
 	args := w.Called(cBody, collection)
 	return args.Error(0)
 }

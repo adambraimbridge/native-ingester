@@ -9,6 +9,7 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"context"
 )
 
 const methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
@@ -61,50 +62,54 @@ func TestGetCollectionByOriginID(t *testing.T) {
 }
 
 func TestWriteContentBodyToCollectionWithSuccess(t *testing.T) {
+	ctx := context.TODO()
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
 	nws := setupMockNativeWriterService(t, 200)
 	defer nws.Close()
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err := w.WriteContentBodyToCollection(aContentBody, methodeCollection)
+	err := w.WriteContentBodyToCollection(ctx, aContentBody, methodeCollection)
 
 	assert.NoError(t, err, "It should not return an error")
 	p.AssertExpectations(t)
 }
 
 func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
+	ctx := context.TODO()
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return("", errors.New("UUID not found"))
 	nws := setupMockNativeWriterService(t, 200)
 	defer nws.Close()
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err := w.WriteContentBodyToCollection(aContentBody, methodeCollection)
+	err := w.WriteContentBodyToCollection(ctx, aContentBody, methodeCollection)
 
 	assert.EqualError(t, err, "UUID not found", "It should return a  UUID not found error")
 	p.AssertExpectations(t)
 }
 
 func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t *testing.T) {
+	ctx := context.TODO()
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
 	nws := setupMockNativeWriterService(t, 500)
 	defer nws.Close()
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err := w.WriteContentBodyToCollection(aContentBody, methodeCollection)
+	err := w.WriteContentBodyToCollection(ctx, aContentBody, methodeCollection)
 
 	assert.EqualError(t, err, "Native writer returned non-200 code", "It should return a non-200 HTTP status error")
 	p.AssertExpectations(t)
 }
 
 func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t *testing.T) {
+	ctx := context.TODO()
 	p := new(ContentBodyParserMock)
 	p.On("getUUID", aContentBody).Return(aUUID, nil)
 
 	w := NewWriter("http://an-address.com", testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err := w.WriteContentBodyToCollection(aContentBody, methodeCollection)
+	err := w.WriteContentBodyToCollection(ctx, aContentBody, methodeCollection)
 
 	assert.Error(t, err, "It should return an error")
 	p.AssertExpectations(t)

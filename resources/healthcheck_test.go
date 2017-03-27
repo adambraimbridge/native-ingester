@@ -9,6 +9,7 @@ import (
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"context"
 )
 
 func TestHappyHealthCheckWithoutProducer(t *testing.T) {
@@ -291,7 +292,7 @@ func (w WriterMock) GetCollectionByOriginID(originID string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (w WriterMock) WriteContentBodyToCollection(cBody native.ContentBody, collection string) error {
+func (w WriterMock) WriteContentBodyToCollection(ctx context.Context, cBody native.ContentBody, collection string) error {
 	args := w.Called(cBody, collection)
 	return args.Error(0)
 }

@@ -5,3 +5,4 @@ native-ingester
 
 /vendor/*
 !/vendor/vendor.json
+.env
