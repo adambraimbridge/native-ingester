@@ -10,11 +10,13 @@ import (
 const expectedTID = "tid_test"
 const expectedOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
 const expectedTimestamp = "2017-02-16T12:56:16Z"
+const expectedHash = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
 
 var someMsgHeaders = map[string]string{
 	"X-Request-Id":      expectedTID,
 	"Origin-System-Id":  expectedOriginSystemID,
 	"Message-Timestamp": expectedTimestamp,
+	"Native-Hash":       expectedHash,
 }
 
 var aMsg = consumer.Message{
@@ -44,26 +46,23 @@ func TestGetOriginSystemID(t *testing.T) {
 	assert.Equal(t, expectedOriginSystemID, actualOriginSystemID, "The Origin-System-Id shoud be the same of a consumer message")
 }
 
-func TestGetContentBodySuccessfully(t *testing.T) {
+func TestGetNativeMessageSuccessfully(t *testing.T) {
 	pe := publicationEvent{aMsg}
-	body, err := pe.contentBody()
+	_, err := pe.nativeMessage()
 
 	assert.NoError(t, err, "It should not return an error")
-	assert.Equal(t, "bar", body["foo"], "The body should contain the original data")
-	assert.Equal(t, expectedTimestamp, body["lastModified"], "The body should contain a lastModified attribute equal to the timestamp message header")
-	assert.Equal(t, expectedTID, body["publishReference"], "The body should contain the publishReference attribute equal to the message transaction ID")
 }
 
-func TestGetContentBodyFailBecauseBadBody(t *testing.T) {
+func TestGetNativeMessageFailBecauseBadBody(t *testing.T) {
 	pe := publicationEvent{aMsgWithBadBody}
-	_, err := pe.contentBody()
+	_, err := pe.nativeMessage()
 
 	assert.EqualError(t, err, "invalid character 'I' looking for beginning of value", "It should return an error")
 }
 
-func TestGetContentBodyFailBecauseMissingTimstamp(t *testing.T) {
+func TestGetCNativeNativeMessageFailBecauseMissingTimstamp(t *testing.T) {
 	pe := publicationEvent{aMsgWithoutTimestamp}
-	_, err := pe.contentBody()
+	_, err := pe.nativeMessage()
 
 	assert.EqualError(t, err, "Publish event does not contain timestamp", "It should return an error")
 }

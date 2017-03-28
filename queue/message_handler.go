@@ -24,7 +24,7 @@ func NewMessageHandler(w native.Writer) *MessageHandler {
 func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 	pubEvent := publicationEvent{msg}
 
-	cBody, err := pubEvent.contentBody()
+	writerMsg, err := pubEvent.nativeMessage()
 	if err != nil {
 		log.WithError(err).WithField("transaction_id", pubEvent.transactionID()).Error("Error unmarshalling content body from publication event. Ignoring message.")
 		return
@@ -36,7 +36,7 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 		return
 	}
 
-	writerErr := mh.writer.WriteContentBodyToCollection(cBody, collection)
+	writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
 		log.WithError(writerErr).WithField("transaction_id", pubEvent.transactionID()).Error("Failed to write native content")
 		return

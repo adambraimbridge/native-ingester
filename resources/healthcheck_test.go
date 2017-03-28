@@ -269,16 +269,16 @@ type ConsumerMock struct {
 	mock.Mock
 }
 
-func (c ConsumerMock) ConnectivityCheck() (string, error) {
+func (c *ConsumerMock) ConnectivityCheck() (string, error) {
 	args := c.Called()
 	return args.String(0), args.Error(1)
 }
 
-func (c ConsumerMock) Start() {
+func (c *ConsumerMock) Start() {
 	c.Called()
 }
 
-func (c ConsumerMock) Stop() {
+func (c *ConsumerMock) Stop() {
 	c.Called()
 }
 
@@ -286,17 +286,17 @@ type WriterMock struct {
 	mock.Mock
 }
 
-func (w WriterMock) GetCollectionByOriginID(originID string) (string, error) {
+func (w *WriterMock) GetCollectionByOriginID(originID string) (string, error) {
 	args := w.Called(originID)
 	return args.String(0), args.Error(1)
 }
 
-func (w WriterMock) WriteContentBodyToCollection(cBody native.ContentBody, collection string) error {
-	args := w.Called(cBody, collection)
+func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) error {
+	args := w.Called(msg, collection)
 	return args.Error(0)
 }
 
-func (w WriterMock) ConnectivityCheck() (string, error) {
+func (w *WriterMock) ConnectivityCheck() (string, error) {
 	args := w.Called()
 	return args.String(0), args.Error(1)
 }
@@ -305,12 +305,12 @@ type ProducerMock struct {
 	mock.Mock
 }
 
-func (p ProducerMock) ConnectivityCheck() (string, error) {
+func (p *ProducerMock) ConnectivityCheck() (string, error) {
 	args := p.Called()
 	return args.String(0), args.Error(1)
 }
 
-func (p ProducerMock) SendMessage(uuid string, msg producer.Message) error {
+func (p *ProducerMock) SendMessage(uuid string, msg producer.Message) error {
 	args := p.Called(uuid, msg)
 	return args.Error(0)
 }
