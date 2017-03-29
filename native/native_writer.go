@@ -61,15 +61,15 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) error {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		log.WithField("transaction_id", msg.transactionID).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		log.WithField("transaction_id", msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
 		return err
 	}
-	log.WithField("transaction_id", msg.transactionID).WithField("uuid", contentUUID).Info("Start processing native publish event")
+	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Start processing native publish event")
 
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID).Error("Error marshalling message")
+		log.WithError(err).WithField("transaction_id", msg.transactionID()).Error("Error marshalling message")
 		return err
 	}
 
@@ -95,17 +95,17 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
 		return err
 	}
 	defer properClose(response)
 
 	if isNot2XXStatusCode(response.StatusCode) {
-		log.WithField("transaction_id", msg.transactionID).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
+		log.WithField("transaction_id", msg.transactionID()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
 		return errors.New("Native writer returned non-200 code")
 	}
 
-	log.WithField("transaction_id", msg.transactionID).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
+	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
 	return nil
 }
 
