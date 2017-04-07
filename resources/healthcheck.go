@@ -70,6 +70,7 @@ func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) 
 
 // GTG is the HTTP handler function for the Good-To-Go of the native ingester
 func (hc *HealthCheck) GTG(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=ascii")
 	if _, err := hc.consumer.ConnectivityCheck(); err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
