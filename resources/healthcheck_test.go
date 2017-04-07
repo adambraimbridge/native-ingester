@@ -182,6 +182,7 @@ func TestHappyGTGCheckWithProducer(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
@@ -197,6 +198,7 @@ func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
@@ -214,6 +216,7 @@ func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
@@ -229,6 +232,7 @@ func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
@@ -246,6 +250,7 @@ func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 func TestUnhappyGTGCheck(t *testing.T) {
@@ -263,6 +268,7 @@ func TestUnhappyGTGCheck(t *testing.T) {
 	hc.GTG(w, req)
 
 	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.Equal(t, "text/plain; charset=ascii", w.Result().Header.Get("Content-Type"))
 }
 
 type ConsumerMock struct {
