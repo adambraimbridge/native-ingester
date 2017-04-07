@@ -53,13 +53,6 @@ func main() {
 		Desc:   "The topic to read the messages from.",
 		EnvVar: "Q_READ_TOPIC",
 	})
-	readQueueHostHeader := app.String(cli.StringOpt{
-		Name:   "read-queue-host-header",
-		Value:  "kafka",
-		Desc:   "The host header for the queue to read the messages from.",
-		EnvVar: "Q_READ_HOST_HEADER",
-	})
-
 	// Native writer configuration
 	nativeWriterAddress := app.String(cli.StringOpt{
 		Name:   "native-writer-address",
@@ -73,19 +66,12 @@ func main() {
 		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
 		EnvVar: "NATIVE_RW_COLLECTIONS_BY_ORIGINS",
 	})
-	nativeWriterHostHeader := app.String(cli.StringOpt{
-		Name:   "native-writer-host-header",
-		Value:  "nativerw",
-		Desc:   "coco-specific header needed to reach the destination address",
-		EnvVar: "NATIVE_RW_HOST_HEADER",
-	})
 	contentUUIDfields := app.Strings(cli.StringsOpt{
 		Name:   "content-uuid-fields",
 		Value:  []string{},
 		Desc:   "List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3",
 		EnvVar: "NATIVE_CONTENT_UUID_FIELDS",
 	})
-
 	// Write Queue configuration
 	writeQueueAddress := app.String(cli.StringOpt{
 		Name:   "write-queue-address",
@@ -99,12 +85,6 @@ func main() {
 		Desc:   "The topic to write the messages to.",
 		EnvVar: "Q_WRITE_TOPIC",
 	})
-	writeQueueHostHeader := app.String(cli.StringOpt{
-		Name:   "write-queue-host-header",
-		Value:  "kafka",
-		Desc:   "The host header for the queue to write the messages to.",
-		EnvVar: "Q_WRITE_HOST_HEADER",
-	})
 
 	app.Action = func() {
 
@@ -112,7 +92,6 @@ func main() {
 			Addrs:                *readQueueAddresses,
 			Group:                *readQueueGroup,
 			Topic:                *readQueueTopic,
-			Queue:                *readQueueHostHeader,
 			ConcurrentProcessing: false,
 		}
 
@@ -122,7 +101,7 @@ func main() {
 		}
 
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
-		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
+		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, bodyParser)
 
 		mh := queue.NewMessageHandler(writer)
 
@@ -131,7 +110,6 @@ func main() {
 			producerConfig := producer.MessageProducerConfig{
 				Addr:  *writeQueueAddress,
 				Topic: *writeQueueTopic,
-				Queue: *writeQueueHostHeader,
 			}
 			messageProducer = producer.NewMessageProducer(producerConfig)
 			mh.ForwardTo(messageProducer)
