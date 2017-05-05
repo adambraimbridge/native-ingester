@@ -59,12 +59,6 @@ func main() {
 		Desc:   "The host header for the queue to read the messages from.",
 		EnvVar: "Q_READ_HOST_HEADER",
 	})
-	readQueueConcurrentProcessing := app.Bool(cli.BoolOpt{
-		Name:   "read-queue-concurrent-processing",
-		Value:  false,
-		Desc:   "Whether the consumer uses concurrent processing for the messages",
-		EnvVar: "Q_READ_CONCURRENT_PROCESSING",
-	})
 
 	// Native writer configuration
 	nativeWriterAddress := app.String(cli.StringOpt{
@@ -119,7 +113,7 @@ func main() {
 			Group:                *readQueueGroup,
 			Topic:                *readQueueTopic,
 			Queue:                *readQueueHostHeader,
-			ConcurrentProcessing: *readQueueConcurrentProcessing,
+			ConcurrentProcessing: false,
 		}
 
 		var collectionsByOriginIds map[string]string
