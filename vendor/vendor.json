@@ -11,20 +11,20 @@
 			"versionExact": "0.1.0"
 		},
 		{
-			"checksumSHA1": "gzIBVJ2Sh53q8X8aD2I+wPsgtzk=",
+			"checksumSHA1": "4OtkapGYP9WO5JGqL3Dct/MUWTI=",
 			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
-			"revision": "9279ce1d7bfa5c45992df1d80651d3e04e134bbf",
-			"revisionTime": "2017-04-07T10:21:12Z",
-			"version": "=0.1.1-k8s-remove-host-routing-rc1",
-			"versionExact": "0.1.1-k8s-remove-host-routing-rc1"
+			"revision": "3885ddaee76749d4b60329b94549edfebc4045ce",
+			"revisionTime": "2017-05-26T06:52:08Z",
+			"version": "0.2.0-k8s-remove-kafka-topic-check-rc1",
+			"versionExact": "0.2.0-k8s-remove-kafka-topic-check-rc1"
 		},
 		{
-			"checksumSHA1": "HiSQf1giCwi/V8cMnkK1pcsZXpM=",
+			"checksumSHA1": "J+4afTatHVLwU1wboY/SvxigwbA=",
 			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "3a5511f4d1c63722f8eaf72aff5fe4d5733903b0",
-			"revisionTime": "2017-04-07T11:12:54Z",
-			"version": "=0.3.1-k8s-remove-host-routing-rc1",
-			"versionExact": "0.3.1-k8s-remove-host-routing-rc1"
+			"revision": "ebabf884866eecf81fe38f10893570d959fae01e",
+			"revisionTime": "2017-05-26T12:24:38Z",
+			"version": "0.4.0-k8s-remove-kafka-topic-check-rc1",
+			"versionExact": "0.4.0-k8s-remove-kafka-topic-check-rc1"
 		},
 		{
 			"checksumSHA1": "fqpohN7Qp2qj7TLMbUxh/cK4oH0=",
