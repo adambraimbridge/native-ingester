@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -105,6 +106,18 @@ func main() {
 	})
 
 	app.Action = func() {
+		httpClient := &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				MaxIdleConnsPerHost:   20,
+				TLSHandshakeTimeout:   3 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			},
+		}
 
 		srcConf := consumer.QueueConfig{
 			Addrs:                *readQueueAddresses,
@@ -132,11 +145,11 @@ func main() {
 				Topic: *writeQueueTopic,
 				Queue: *writeQueueHostHeader,
 			}
-			messageProducer = producer.NewMessageProducer(*producerConfig)
+			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
 			mh.ForwardTo(messageProducer)
 		}
 
-		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, &http.Client{})
+		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 		log.Infof("[Startup] Using native writer configuration: %# v", writer)
@@ -145,7 +158,7 @@ func main() {
 			log.Infof("[Startup] Producer: %# v", messageProducer)
 		}
 
-		go enableHealthCheck(&srcConf, producerConfig, writer)
+		go enableHealthCheck(messageConsumer, messageProducer, writer)
 		startMessageConsumption(messageConsumer)
 	}
 
@@ -155,8 +168,8 @@ func main() {
 	}
 }
 
-func enableHealthCheck(consumerConf *consumer.QueueConfig, producerConf *producer.MessageProducerConfig, nw native.Writer) {
-	hc := resources.NewHealthCheck(consumerConf, producerConf, nw)
+func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.MessageProducer, nw native.Writer) {
+	hc := resources.NewHealthCheck(consumer, producer, nw)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())

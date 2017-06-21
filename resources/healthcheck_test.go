@@ -2,6 +2,7 @@ package resources
 
 import (
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -13,21 +14,26 @@ import (
 	"github.com/Financial-Times/native-ingester/native"
 )
 
-func TestNewHealthCheckWithoutProducerConfig(t *testing.T) {
-	c := &consumer.QueueConfig{}
+func TestNewHealthCheckWithoutProducer(t *testing.T) {
 	nw := new(WriterMock)
-	hc := NewHealthCheck(c, nil, nw)
+	hc := NewHealthCheck(
+		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
+		nil,
+		nw,
+	)
 
 	assert.Nil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
 	assert.NotNil(t, hc.writer)
 }
 
-func TestNewHealthCheckWithProducerConfig(t *testing.T) {
-	c := &consumer.QueueConfig{}
-	p := &producer.MessageProducerConfig{}
+func TestNewHealthCheckWithProducer(t *testing.T) {
 	nw := new(WriterMock)
-	hc := NewHealthCheck(c, p, nw)
+	hc := NewHealthCheck(
+		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
+		producer.NewMessageProducer(producer.MessageProducerConfig{}),
+		nw,
+	)
 
 	assert.NotNil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
