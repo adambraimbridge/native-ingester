@@ -2,7 +2,6 @@ package resources
 
 import (
 	"net/http"
-	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1a"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
@@ -12,8 +11,6 @@ import (
 	"github.com/Financial-Times/native-ingester/native"
 )
 
-const requestTimeout = 4500
-
 // HealthCheck implements the healthcheck for the native ingester
 type HealthCheck struct {
 	writer   native.Writer
@@ -22,13 +19,7 @@ type HealthCheck struct {
 }
 
 // NewHealthCheck return a new instance of a native ingester HealthCheck
-func NewHealthCheck(consumerConfig *consumer.QueueConfig, producerConfig *producer.MessageProducerConfig, nw native.Writer) *HealthCheck {
-	httpClient := &http.Client{Timeout: requestTimeout * time.Millisecond}
-	c := consumer.NewConsumer(*consumerConfig, func(m consumer.Message) {}, httpClient)
-	var p producer.MessageProducer
-	if producerConfig != nil {
-		p = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
-	}
+func NewHealthCheck(c consumer.MessageConsumer, p producer.MessageProducer, nw native.Writer) *HealthCheck {
 	return &HealthCheck{
 		writer:   nw,
 		consumer: c,
