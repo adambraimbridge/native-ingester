@@ -1,0 +1,10 @@
+# Values used for the deployed application.
+replicaCount: 2
+service:
+  name: native-ingester-metadata
+env:
+  QUEUE_READ_GROUP: "nativeIngesterMetadata"
+  QUEUE_READ_TOPIC: "PreNativeCmsMetadataPublicationEvents"
+  NATIVE_CONTENT_UUID_FIELDS: "uuid,post.uuid,data.uuidv3"
+  NATIVE_RW_COLLECTIONS_BY_ORIGINS: "{\"http://cmdb.ft.com/systems/methode-web-pub\": \"v1-metadata\"}"
+  QUEUE_WRITE_TOPIC: "NativeCmsMetadataPublicationEvents"
