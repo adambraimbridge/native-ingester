@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -8,18 +10,15 @@ import (
 	"syscall"
 	"time"
 
-	"encoding/json"
-
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 func init() {
@@ -107,6 +106,18 @@ func main() {
 	})
 
 	app.Action = func() {
+		httpClient := &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				MaxIdleConnsPerHost:   20,
+				TLSHandshakeTimeout:   3 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			},
+		}
 
 		srcConf := consumer.QueueConfig{
 			Addrs:                *readQueueAddresses,
@@ -127,17 +138,18 @@ func main() {
 		mh := queue.NewMessageHandler(writer)
 
 		var messageProducer producer.MessageProducer
+		var producerConfig *producer.MessageProducerConfig
 		if *writeQueueAddress != "" {
-			producerConfig := producer.MessageProducerConfig{
+			producerConfig = &producer.MessageProducerConfig{
 				Addr:  *writeQueueAddress,
 				Topic: *writeQueueTopic,
 				Queue: *writeQueueHostHeader,
 			}
-			messageProducer = producer.NewMessageProducer(producerConfig)
+			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
 			mh.ForwardTo(messageProducer)
 		}
 
-		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, &http.Client{})
+		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
 		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 		log.Infof("[Startup] Using native writer configuration: %# v", writer)
@@ -146,7 +158,7 @@ func main() {
 			log.Infof("[Startup] Producer: %# v", messageProducer)
 		}
 
-		go enableHealthCheck(messageConsumer, writer, messageProducer)
+		go enableHealthCheck(messageConsumer, messageProducer, writer)
 		startMessageConsumption(messageConsumer)
 	}
 
@@ -156,12 +168,12 @@ func main() {
 	}
 }
 
-func enableHealthCheck(c consumer.MessageConsumer, nw native.Writer, p producer.MessageProducer) {
-	hc := resources.NewHealthCheck(c, nw, p)
+func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.MessageProducer, nw native.Writer) {
+	hc := resources.NewHealthCheck(consumer, producer, nw)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())
-	r.HandleFunc(httphandlers.GTGPath, hc.GTG).Methods("GET")
+	r.HandleFunc(httphandlers.GTGPath, httphandlers.NewGoodToGoHandler(hc.GTG)).Methods("GET")
 	r.HandleFunc(httphandlers.BuildInfoPath, httphandlers.BuildInfoHandler).Methods("GET")
 	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
 
