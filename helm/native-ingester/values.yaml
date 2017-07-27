@@ -10,5 +10,9 @@ image:
 resources:
   limits:
     memory: 256Mi
-
-
+env:
+  QUEUE_READ_GROUP: "" # This should be defined in the specific app-configs folder
+  QUEUE_READ_TOPIC: "" # This should be defined in the specific app-configs folder
+  NATIVE_CONTENT_UUID_FIELDS: "" # This should be defined in the specific app-configs folder
+  NATIVE_RW_COLLECTIONS_BY_ORIGINS: "" # This should be defined in the specific app-configs folder
+  QUEUE_WRITE_TOPIC: "" # This should be defined in the specific app-configs folder
