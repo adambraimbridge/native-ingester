@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Financial-Times/go-logger"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	log "github.com/Sirupsen/logrus"
 )
 
 const nativeHashHeader = "X-Native-Hash"
@@ -61,24 +61,21 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) error {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		log.WithField("transaction_id", msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		logger.ErrorEvent(msg.transactionID(), "Error extracting uuid. Ignoring message.", err)
 		return err
 	}
-	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Start processing native publish event")
-
+	logger.InfoEventWithUUID(msg.transactionID(), contentUUID, "Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).Error("Error marshalling message")
+		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error marshalling message", err)
 		return err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	log.WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Info("Built request URL for native writer")
-
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error calling native writer. Ignoring message.", err)
 		return err
 	}
 
@@ -95,28 +92,30 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
+		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error calling native writer. Ignoring message.", err)
 		return err
 	}
-	defer properClose(response)
+	defer properClose(msg.transactionID(), response)
 
 	if isNot2XXStatusCode(response.StatusCode) {
-		log.WithField("transaction_id", msg.transactionID()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
-		return errors.New("Native writer returned non-200 code")
+		errMsg := "Native writer returned non-200 code"
+		err := errors.New(errMsg)
+		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, errMsg, err)
+		return err
 	}
 
-	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
+	logger.InfoEventWithUUID(msg.transactionID(), contentUUID, "Successfully finished processing native publish event")
 	return nil
 }
 
-func properClose(resp *http.Response) {
+func properClose(tid string, resp *http.Response) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		log.WithError(err).Warn("Couldn't read response body")
+		logger.WarnEvent(tid, "Couldn't read response body", err)
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		log.WithError(err).Warn("Couldn't close response body")
+		logger.WarnEvent(tid, "Couldn't close response body", err)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/Financial-Times/go-logger"
 )
 
 const methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
@@ -29,6 +30,10 @@ var testCollectionsOriginIdsMap = map[string]string{
 var aContentBody = map[string]interface{}{
 	"publishReference": publishRef,
 	"lastModified":     aTimestamp,
+}
+
+func init() {
+	logger.InitDefaultLogger("native-ingester")
 }
 
 func setupMockNativeWriterService(t *testing.T, status int, hasHash bool) *httptest.Server {

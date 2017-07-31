@@ -1,11 +1,11 @@
 package queue
 
 import (
+	"fmt"
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/Financial-Times/native-ingester/native"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 // MessageHandler handles messages consumed from a queue
@@ -26,30 +26,30 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 
 	writerMsg, err := pubEvent.nativeMessage()
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", pubEvent.transactionID()).Error("Error unmarshalling content body from publication event. Ignoring message.")
+		logger.ErrorEvent(pubEvent.transactionID(), "Error unmarshalling content body from publication event. Ignoring message.", err)
 		return
 	}
 
 	collection, err := mh.writer.GetCollectionByOriginID(pubEvent.originSystemID())
 	if err != nil {
-		log.WithField("transaction_id", pubEvent.transactionID()).WithField("Origin-System-Id", pubEvent.originSystemID()).Info("Skipping content because of not whitelisted Origin-System-Id")
+		logger.InfoEvent(pubEvent.transactionID(), fmt.Sprintf("Skipping content because of not whitelisted Origin-System-Id: %s", pubEvent.originSystemID()))
 		return
 	}
 
 	writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
-		log.WithError(writerErr).WithField("transaction_id", pubEvent.transactionID()).Error("Failed to write native content")
+		logger.ErrorEvent(pubEvent.transactionID(), "Failed to write native content", writerErr)
 		return
 	}
 
 	if mh.forwards {
-		log.WithField("transaction_id", pubEvent.transactionID()).Info("Forwarding consumed message to different queue...")
+		logger.InfoEvent(pubEvent.transactionID(), "Forwarding consumed message to different queue")
 		forwardErr := mh.producer.SendMessage("", pubEvent.producerMsg())
 		if forwardErr != nil {
-			log.WithError(forwardErr).WithField("transaction_id", pubEvent.transactionID()).Error("Failed to forward consumed message to a different queue")
+			logger.ErrorEvent(pubEvent.transactionID(), "Failed to forward consumed message to a different queue", forwardErr)
 			return
 		}
-		log.WithField("transaction_id", pubEvent.transactionID()).Info("Consumed message successfully forwarded")
+		logger.MonitoringEvent("Ingest", pubEvent.transactionID(), "Annotations", "Successfully ingester")
 	}
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/Financial-Times/go-logger"
 	"net"
 	"net/http"
 	"os"
@@ -16,18 +17,12 @@ import (
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 )
 
 func init() {
-	f := &log.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: time.RFC3339Nano,
-	}
-
-	log.SetFormatter(f)
+	logger.InitDefaultLogger("native-ingester")
 }
 
 func main() {
@@ -129,7 +124,7 @@ func main() {
 
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
+			logger.Errorf(map[string]interface{}{"error": err}, "Couldn't parse JSON for originId to collection map")
 		}
 
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
@@ -150,12 +145,12 @@ func main() {
 		}
 
 		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
-		log.Infof("[Startup] Consumer: %# v", messageConsumer)
-		log.Infof("[Startup] Using source configuration: %# v", srcConf)
-		log.Infof("[Startup] Using native writer configuration: %# v", writer)
-		log.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		logger.Infof(map[string]interface{}{}, "[Startup] Consumer: %# v", messageConsumer)
+		logger.Infof(map[string]interface{}{}, "[Startup] Using source configuration: %# v", srcConf)
+		logger.Infof(map[string]interface{}{}, "[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof(map[string]interface{}{}, "[Startup] Using native writer configuration: %# v", *contentUUIDfields)
 		if messageProducer != nil {
-			log.Infof("[Startup] Producer: %# v", messageProducer)
+			logger.Infof(map[string]interface{}{}, "[Startup] Producer: %# v", messageProducer)
 		}
 
 		go enableHealthCheck(messageConsumer, messageProducer, writer)
@@ -180,7 +175,7 @@ func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.Mess
 	http.Handle("/", r)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		log.WithError(err).Panic("Couldn't set up HTTP listener")
+		logger.FatalEvent("Couldn't set up HTTP listener", err)
 	}
 }
 

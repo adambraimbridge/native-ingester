@@ -11,6 +11,12 @@
 			"versionExact": "0.1.0"
 		},
 		{
+			"checksumSHA1": "TT5TiVe4UF1qEuyko3yQRp1W3UA=",
+			"path": "github.com/Financial-Times/go-logger",
+			"revision": "bd0622ea9923a1a014013e7712e6a097720755a8",
+			"revisionTime": "2017-07-27T13:48:46Z"
+		},
+		{
 			"checksumSHA1": "GrgODPqXv7QebQjfjrxMHctK0wE=",
 			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
 			"revision": "0bb065111416c0de78db51acb926ba3a3ae3c4e2",

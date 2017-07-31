@@ -2,6 +2,7 @@ package queue
 
 import (
 	"errors"
+	"github.com/Financial-Times/go-logger"
 	"testing"
 
 	"github.com/Financial-Times/message-queue-go-producer/producer"
@@ -9,9 +10,6 @@ import (
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	log "github.com/Sirupsen/logrus"
-	testLog "github.com/Sirupsen/logrus/hooks/test"
 )
 
 const methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
@@ -31,6 +29,10 @@ var goodMsg = consumer.Message{
 var badBodyMsg = consumer.Message{
 	Body:    "I am not JSON",
 	Headers: goodMsgHeaders,
+}
+
+func init() {
+	logger.InitDefaultLogger("native-ingester")
 }
 
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
@@ -107,7 +109,7 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 }
 
 func TestForwardFailBecauseOfProducer(t *testing.T) {
-	hook := testLog.NewGlobal()
+	hook := logger.NewTestHook("native-ingester")
 	w := new(WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return(nil)
@@ -121,7 +123,7 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 
 	w.AssertExpectations(t)
 	p.AssertExpectations(t)
-	assert.Equal(t, log.ErrorLevel, hook.LastEntry().Level)
+	assert.Equal(t, "error", hook.LastEntry().Level.String())
 	assert.Equal(t, "Failed to forward consumed message to a different queue", hook.LastEntry().Message)
 }
 
