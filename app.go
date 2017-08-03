@@ -21,10 +21,6 @@ import (
 	"github.com/jawher/mow.cli"
 )
 
-func init() {
-	logger.InitDefaultLogger("native-ingester")
-}
-
 func main() {
 	app := cli.App("native-ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
 
@@ -100,6 +96,13 @@ func main() {
 		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
 
+	appName := app.String(cli.StringOpt{
+		Name:   "appName",
+		Value:  "native-ingester",
+		Desc:   "The name of the application",
+		EnvVar: "APP_NAME",
+	})
+
 	app.Action = func() {
 		httpClient := &http.Client{
 			Transport: &http.Transport{
@@ -121,7 +124,7 @@ func main() {
 			Queue:                *readQueueHostHeader,
 			ConcurrentProcessing: false,
 		}
-
+		logger.InitDefaultLogger(*appName)
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			logger.Errorf(map[string]interface{}{"error": err}, "Couldn't parse JSON for originId to collection map")

@@ -36,7 +36,7 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 		return
 	}
 
-	writerErr := mh.writer.WriteToCollection(writerMsg, collection)
+	contentUUID, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
 		logger.ErrorEvent(pubEvent.transactionID(), "Failed to write native content", writerErr)
 		return
@@ -49,7 +49,7 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 			logger.ErrorEvent(pubEvent.transactionID(), "Failed to forward consumed message to a different queue", forwardErr)
 			return
 		}
-		logger.MonitoringEvent("Ingest", pubEvent.transactionID(), "Annotations", "Successfully ingester")
+		logger.MonitoringEventWithUUID("Ingest", pubEvent.transactionID(), contentUUID, "", "Successfully ingested")
 	}
 }
 
