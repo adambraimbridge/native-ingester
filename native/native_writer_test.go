@@ -39,6 +39,7 @@ func setupMockNativeWriterService(t *testing.T, status int, hasHash bool) *httpt
 		assert.Equal(t, "PUT", req.Method)
 		assert.Equal(t, "/"+methodeCollection+"/"+aUUID, req.URL.Path)
 		assert.Equal(t, nativeRWHostHeader, req.Host)
+		assert.Equal(t, publishRef, req.Header.Get(transactionIDHeader))
 		if hasHash {
 			assert.Equal(t, aHash, req.Header.Get(nativeHashHeader))
 		}
