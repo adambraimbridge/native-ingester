@@ -6,19 +6,25 @@ import (
 	fthealth "github.com/Financial-Times/go-fthealth/v1a"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/service-status-go/gtg"
+
 	"github.com/Financial-Times/native-ingester/native"
 )
 
 // HealthCheck implements the healthcheck for the native ingester
 type HealthCheck struct {
-	consumer consumer.MessageConsumer
 	writer   native.Writer
+	consumer consumer.MessageConsumer
 	producer producer.MessageProducer
 }
 
 // NewHealthCheck return a new instance of a native ingester HealthCheck
-func NewHealthCheck(c consumer.MessageConsumer, nw native.Writer, p producer.MessageProducer) *HealthCheck {
-	return &HealthCheck{c, nw, p}
+func NewHealthCheck(c consumer.MessageConsumer, p producer.MessageProducer, nw native.Writer) *HealthCheck {
+	return &HealthCheck{
+		writer:   nw,
+		consumer: c,
+		producer: p,
+	}
 }
 
 func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
@@ -54,13 +60,13 @@ func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 	}
 }
 
-//Handler returns the HTTP handler of the heatlh check
+//Handler returns the HTTP handler of the healthcheck
 func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) {
 	checks := []fthealth.Check{hc.consumerQueueCheck(), hc.nativeWriterCheck()}
 	if hc.producer != nil {
 		checks = append(checks, hc.producerQueueCheck())
 	}
-	h := fthealth.Handler(
+	h := fthealth.HandlerParallel(
 		"Dependent services healthcheck",
 		"Checks if all the dependent services are reachable and healthy.",
 		checks...,
@@ -68,17 +74,28 @@ func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) 
 	return h
 }
 
-// GTG is the HTTP handler function for the Good-To-Go of the native ingester
-func (hc *HealthCheck) GTG(w http.ResponseWriter, req *http.Request) {
-	if _, err := hc.consumer.ConnectivityCheck(); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
+func (hc *HealthCheck) GTG() gtg.Status {
+	consumerCheck := func() gtg.Status {
+		return gtgCheck(hc.consumer.ConnectivityCheck)
 	}
-	if _, err := hc.writer.ConnectivityCheck(); err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
+
+	writerCheck := func() gtg.Status {
+		return gtgCheck(hc.writer.ConnectivityCheck)
 	}
+
 	if hc.producer != nil {
-		if _, err := hc.producer.ConnectivityCheck(); err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
+		producerCheck := func() gtg.Status {
+			return gtgCheck(hc.producer.ConnectivityCheck)
 		}
+		return gtg.FailFastParallelCheck([]gtg.StatusChecker{consumerCheck, producerCheck, writerCheck})()
 	}
+
+	return gtg.FailFastParallelCheck([]gtg.StatusChecker{consumerCheck, writerCheck})()
+}
+
+func gtgCheck(handler func() (string, error)) gtg.Status {
+	if _, err := handler(); err != nil {
+		return gtg.Status{GoodToGo: false, Message: err.Error()}
+	}
+	return gtg.Status{GoodToGo: true}
 }

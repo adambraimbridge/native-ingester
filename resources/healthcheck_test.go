@@ -2,21 +2,53 @@ package resources
 
 import (
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/Financial-Times/native-ingester/native"
 )
+
+func TestNewHealthCheckWithoutProducer(t *testing.T) {
+	nw := new(WriterMock)
+	hc := NewHealthCheck(
+		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
+		nil,
+		nw,
+	)
+
+	assert.Nil(t, hc.producer)
+	assert.NotNil(t, hc.consumer)
+	assert.NotNil(t, hc.writer)
+}
+
+func TestNewHealthCheckWithProducer(t *testing.T) {
+	nw := new(WriterMock)
+	hc := NewHealthCheck(
+		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
+		producer.NewMessageProducer(producer.MessageProducerConfig{}),
+		nw,
+	)
+
+	assert.NotNil(t, hc.producer)
+	assert.NotNil(t, hc.consumer)
+	assert.NotNil(t, hc.writer)
+}
 
 func TestHappyHealthCheckWithoutProducer(t *testing.T) {
 	c := new(ConsumerMock)
 	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -37,7 +69,11 @@ func TestHappyHealthCheckWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -56,7 +92,10 @@ func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
 	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -77,7 +116,11 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -96,7 +139,10 @@ func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
 	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -117,7 +163,11 @@ func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -138,7 +188,11 @@ func TestUnhappyProducerHealthCheck(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm an happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a unhappy producer", errors.New("I'm not fat, I'm big-boned."))
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -157,14 +211,15 @@ func TestHappyGTGCheckWithoutProducer(t *testing.T) {
 	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
+	assert.True(t, status.GoodToGo)
+	assert.Empty(t, status.Message)
 }
 
 func TestHappyGTGCheckWithProducer(t *testing.T) {
@@ -174,14 +229,16 @@ func TestHappyGTGCheckWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
+	assert.True(t, status.GoodToGo)
+	assert.Empty(t, status.Message)
 }
 
 func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
@@ -189,14 +246,15 @@ func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
 	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.False(t, status.GoodToGo)
+	assert.Equal(t, "Screw you guys I'm going home!", status.Message)
 }
 
 func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
@@ -206,14 +264,16 @@ func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.False(t, status.GoodToGo)
+	assert.Equal(t, "Screw you guys I'm going home!", status.Message)
 }
 
 func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
@@ -221,14 +281,15 @@ func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
 	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
 	nw := new(WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
-	hc := NewHealthCheck(c, nw, nil)
+	hc := HealthCheck{
+		consumer: c,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.False(t, status.GoodToGo)
+	assert.Equal(t, "Oh, my God, they killed Kenny!", status.Message)
 }
 
 func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
@@ -238,14 +299,16 @@ func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.False(t, status.GoodToGo)
+	assert.Equal(t, "Oh, my God, they killed Kenny!", status.Message)
 }
 
 func TestUnhappyGTGCheck(t *testing.T) {
@@ -255,14 +318,16 @@ func TestUnhappyGTGCheck(t *testing.T) {
 	nw.On("ConnectivityCheck").Return("I'm an happy writer", nil)
 	p := new(ProducerMock)
 	p.On("ConnectivityCheck").Return("I'm a unhappy producer", errors.New("I'm not fat, I'm big-boned."))
-	hc := NewHealthCheck(c, nw, p)
+	hc := HealthCheck{
+		consumer: c,
+		producer: p,
+		writer:   nw,
+	}
 
-	req := httptest.NewRequest("GET", "http://example.com/__gtg", nil)
-	w := httptest.NewRecorder()
+	status := hc.GTG()
 
-	hc.GTG(w, req)
-
-	assert.Equal(t, 503, w.Code, "It should return HTTP 503 Service Unavailable")
+	assert.False(t, status.GoodToGo)
+	assert.Equal(t, "I'm not fat, I'm big-boned.", status.Message)
 }
 
 type ConsumerMock struct {
