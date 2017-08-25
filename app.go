@@ -127,7 +127,7 @@ func main() {
 		logger.InitDefaultLogger(*appName)
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			logger.Errorf(map[string]interface{}{"error": err}, "Couldn't parse JSON for originId to collection map")
+			logger.Errorf(nil, err, "Couldn't parse JSON for originId to collection map")
 		}
 
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
@@ -178,7 +178,7 @@ func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.Mess
 	http.Handle("/", r)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		logger.FatalEvent("Couldn't set up HTTP listener", err)
+		logger.Fatalf(nil, err, "Couldn't set up HTTP listener")
 	}
 }
 

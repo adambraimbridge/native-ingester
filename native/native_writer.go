@@ -61,21 +61,21 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		logger.ErrorEvent(msg.transactionID(), "Error extracting uuid. Ignoring message.", err)
+		logger.NewEntry(msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
 		return contentUUID, err
 	}
-	logger.InfoEventWithUUID(msg.transactionID(), contentUUID, "Start processing native publish event")
+	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error marshalling message", err)
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
 		return contentUUID, err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error calling native writer. Ignoring message.", err)
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, err
 	}
 
@@ -92,7 +92,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, "Error calling native writer. Ignoring message.", err)
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, err
 	}
 	defer properClose(msg.transactionID(), response)
@@ -100,22 +100,22 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	if isNot2XXStatusCode(response.StatusCode) {
 		errMsg := "Native writer returned non-200 code"
 		err := errors.New(errMsg)
-		logger.ErrorEventWithUUID(msg.transactionID(), contentUUID, errMsg, err)
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
 		return contentUUID, err
 	}
 
-	logger.InfoEventWithUUID(msg.transactionID(), contentUUID, "Successfully finished processing native publish event")
+	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
 	return contentUUID, nil
 }
 
 func properClose(tid string, resp *http.Response) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		logger.WarnEvent(tid, "Couldn't read response body", err)
+		logger.NewEntry(tid).WithError(err).Warn("Couldn't read response body")
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		logger.WarnEvent(tid, "Couldn't close response body", err)
+		logger.NewEntry(tid).WithError(err).Warn("Couldn't close response body")
 	}
 }
 

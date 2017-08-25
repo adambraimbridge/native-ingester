@@ -26,30 +26,41 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 
 	writerMsg, err := pubEvent.nativeMessage()
 	if err != nil {
-		logger.ErrorEvent(pubEvent.transactionID(), "Error unmarshalling content body from publication event. Ignoring message.", err)
+		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), "").
+			WithError(err).
+			Error("Error unmarshalling content body from publication event. Ignoring message.")
 		return
 	}
 
 	collection, err := mh.writer.GetCollectionByOriginID(pubEvent.originSystemID())
 	if err != nil {
-		logger.InfoEvent(pubEvent.transactionID(), fmt.Sprintf("Skipping content because of not whitelisted Origin-System-Id: %s", pubEvent.originSystemID()))
+		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), "").
+			WithValidFlag(false).
+			Warn(fmt.Sprintf("Skipping content because of not whitelisted Origin-System-Id: %s", pubEvent.originSystemID()))
 		return
 	}
 
 	contentUUID, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
-		logger.ErrorEvent(pubEvent.transactionID(), "Failed to write native content", writerErr)
+		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), "").
+			WithError(writerErr).
+			Error("Failed to write native content")
 		return
 	}
 
 	if mh.forwards {
-		logger.InfoEvent(pubEvent.transactionID(), "Forwarding consumed message to different queue")
+		logger.NewEntry(pubEvent.transactionID()).Info("Forwarding consumed message to different queue")
 		forwardErr := mh.producer.SendMessage("", pubEvent.producerMsg())
 		if forwardErr != nil {
-			logger.ErrorEvent(pubEvent.transactionID(), "Failed to forward consumed message to a different queue", forwardErr)
+			logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), "").
+				WithUUID(contentUUID).
+				WithError(forwardErr).
+				Error("Failed to forward consumed message to a different queue")
 			return
 		}
-		logger.MonitoringEventWithUUID("Ingest", pubEvent.transactionID(), contentUUID, "", "Successfully ingested")
+		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), "").
+			WithUUID(contentUUID).
+			Info("Successfully ingested")
 	}
 }
 
