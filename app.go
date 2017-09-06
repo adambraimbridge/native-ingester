@@ -22,16 +22,20 @@ import (
 )
 
 func init() {
-	f := &log.TextFormatter{
-		FullTimestamp:   true,
+	log.SetFormatter(&log.JSONFormatter{
 		TimestampFormat: time.RFC3339Nano,
-	}
-
-	log.SetFormatter(f)
+	})
 }
 
 func main() {
 	app := cli.App("native-ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
+
+	port := app.String(cli.StringOpt{
+		Name:   "port",
+		Value:  "8080",
+		Desc:   "Port to listen on",
+		EnvVar: "PORT",
+	})
 
 	//Read queue configuration
 	readQueueAddresses := app.Strings(cli.StringsOpt{
@@ -126,14 +130,17 @@ func main() {
 			Queue:                *readQueueHostHeader,
 			ConcurrentProcessing: false,
 		}
+		log.Infof("[Startup] Using source configuration: %# v", srcConf)
 
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
 		}
 
+		log.Infof("[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
 		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
+		log.Infof("[Startup] Using native writer configuration: %# v", writer)
 
 		mh := queue.NewMessageHandler(writer)
 
@@ -146,19 +153,14 @@ func main() {
 				Queue: *writeQueueHostHeader,
 			}
 			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
+			log.Infof("[Startup] Producer: %# v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
 		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
 		log.Infof("[Startup] Consumer: %# v", messageConsumer)
-		log.Infof("[Startup] Using source configuration: %# v", srcConf)
-		log.Infof("[Startup] Using native writer configuration: %# v", writer)
-		log.Infof("[Startup] Using native writer configuration: %# v", *contentUUIDfields)
-		if messageProducer != nil {
-			log.Infof("[Startup] Producer: %# v", messageProducer)
-		}
 
-		go enableHealthCheck(messageConsumer, messageProducer, writer)
+		go enableHealthCheck(*port, messageConsumer, messageProducer, writer)
 		startMessageConsumption(messageConsumer)
 	}
 
@@ -168,7 +170,7 @@ func main() {
 	}
 }
 
-func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.MessageProducer, nw native.Writer) {
+func enableHealthCheck(port string, consumer consumer.MessageConsumer, producer producer.MessageProducer, nw native.Writer) {
 	hc := resources.NewHealthCheck(consumer, producer, nw)
 
 	r := mux.NewRouter()
@@ -178,7 +180,7 @@ func enableHealthCheck(consumer consumer.MessageConsumer, producer producer.Mess
 	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
 
 	http.Handle("/", r)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.WithError(err).Panic("Couldn't set up HTTP listener")
 	}
