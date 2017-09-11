@@ -158,10 +158,10 @@ func main() {
 		}
 
 		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
-		logger.Infof(map[string]interface{}{}, "[Startup] Consumer: %# v", messageConsumer)
-		logger.Infof(map[string]interface{}{}, "[Startup] Using source configuration: %# v", srcConf)
-		logger.Infof(map[string]interface{}{}, "[Startup] Using native writer configuration: %# v", writer)
-		logger.Infof(map[string]interface{}{}, "[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		logger.Infof(nil, "[Startup] Consumer: %# v", messageConsumer)
+		logger.Infof(nil, "[Startup] Using source configuration: %# v", srcConf)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", *contentUUIDfields)
 		if messageProducer != nil {
 			logger.Infof(map[string]interface{}{}, "[Startup] Producer: %# v", messageProducer)
 		}
