@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/Financial-Times/go-logger"
 	"net"
 	"net/http"
 	"os"
@@ -16,16 +17,9 @@ import (
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 )
-
-func init() {
-	log.SetFormatter(&log.JSONFormatter{
-		TimestampFormat: time.RFC3339Nano,
-	})
-}
 
 func main() {
 	app := cli.App("native-ingester", "A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue")
@@ -109,6 +103,13 @@ func main() {
 		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
 
+	appName := app.String(cli.StringOpt{
+		Name:   "appName",
+		Value:  "native-ingester",
+		Desc:   "The name of the application",
+		EnvVar: "APP_NAME",
+	})
+
 	app.Action = func() {
 		httpClient := &http.Client{
 			Transport: &http.Transport{
@@ -130,17 +131,16 @@ func main() {
 			Queue:                *readQueueHostHeader,
 			ConcurrentProcessing: false,
 		}
-		log.Infof("[Startup] Using source configuration: %# v", srcConf)
-
+		logger.InitDefaultLogger(*appName)
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			log.WithError(err).Error("Couldn't parse JSON for originId to collection map")
+			logger.Errorf(nil, err, "Couldn't parse JSON for originId to collection map")
 		}
 
-		log.Infof("[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
+		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
 		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
-		log.Infof("[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
 
 		mh := queue.NewMessageHandler(writer)
 
@@ -153,12 +153,18 @@ func main() {
 				Queue: *writeQueueHostHeader,
 			}
 			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
-			log.Infof("[Startup] Producer: %# v", messageProducer)
+			logger.Infof(nil, "[Startup] Producer: %# v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
 		messageConsumer := consumer.NewConsumer(srcConf, mh.HandleMessage, httpClient)
-		log.Infof("[Startup] Consumer: %# v", messageConsumer)
+		logger.Infof(nil, "[Startup] Consumer: %# v", messageConsumer)
+		logger.Infof(nil, "[Startup] Using source configuration: %# v", srcConf)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", *contentUUIDfields)
+		if messageProducer != nil {
+			logger.Infof(map[string]interface{}{}, "[Startup] Producer: %# v", messageProducer)
+		}
 
 		go enableHealthCheck(*port, messageConsumer, messageProducer, writer)
 		startMessageConsumption(messageConsumer)
@@ -182,7 +188,7 @@ func enableHealthCheck(port string, consumer consumer.MessageConsumer, producer 
 	http.Handle("/", r)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
-		log.WithError(err).Panic("Couldn't set up HTTP listener")
+		logger.Fatalf(nil, err, "Couldn't set up HTTP listener")
 	}
 }
 

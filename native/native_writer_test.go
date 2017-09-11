@@ -6,21 +6,25 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-const methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
-const methodeCollection = "methode"
-const nativeRWHostHeader = "native-rw"
-const publishRef = "tid_test-pub-ref"
-const aUUID = "572d0acc-3f12-4e70-8830-8092c1042a52"
-const aTimestamp = "2017-02-16T12:56:16Z"
-const aHash = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
+const (
+	methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
+	methodeCollection     = "methode"
 
-const withNativeHashHeader = true
-const withoutNativeHashHeader = false
+	nativeRWHostHeader = "native-rw"
+	publishRef         = "tid_test-pub-ref"
+	aUUID              = "572d0acc-3f12-4e70-8830-8092c1042a52"
+	aTimestamp         = "2017-02-16T12:56:16Z"
+	aHash              = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
+
+	withNativeHashHeader    = true
+	withoutNativeHashHeader = false
+)
 
 var testCollectionsOriginIdsMap = map[string]string{
 	methodeOriginSystemID: methodeCollection,
@@ -29,6 +33,10 @@ var testCollectionsOriginIdsMap = map[string]string{
 var aContentBody = map[string]interface{}{
 	"publishReference": publishRef,
 	"lastModified":     aTimestamp,
+}
+
+func init() {
+	logger.InitDefaultLogger("native-ingester")
 }
 
 func setupMockNativeWriterService(t *testing.T, status int, hasHash bool) *httptest.Server {
@@ -81,9 +89,10 @@ func TestWriteMessageToCollectionWithSuccess(t *testing.T) {
 	assert.NoError(t, err, "It should not return an error by creating a message")
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err = w.WriteToCollection(msg, methodeCollection)
+	contentUUID, err := w.WriteToCollection(msg, methodeCollection)
 
 	assert.NoError(t, err, "It should not return an error")
+	assert.Equal(t, aUUID, contentUUID)
 	p.AssertExpectations(t)
 }
 
@@ -98,9 +107,10 @@ func TestWriteMessageWithHashToCollectionWithSuccess(t *testing.T) {
 	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err = w.WriteToCollection(msg, methodeCollection)
+	contentUUID, err := w.WriteToCollection(msg, methodeCollection)
 
 	assert.NoError(t, err, "It should not return an error")
+	assert.Equal(t, aUUID, contentUUID)
 	p.AssertExpectations(t)
 }
 
@@ -115,7 +125,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfMissingUUID(t *testing.T) {
 	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err = w.WriteToCollection(msg, methodeCollection)
+	_, err = w.WriteToCollection(msg, methodeCollection)
 
 	assert.EqualError(t, err, "UUID not found", "It should return a  UUID not found error")
 	p.AssertExpectations(t)
@@ -132,7 +142,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceInternalError(t
 	msg.AddHashHeader(aHash)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err = w.WriteToCollection(msg, methodeCollection)
+	_, err = w.WriteToCollection(msg, methodeCollection)
 
 	assert.EqualError(t, err, "Native writer returned non-200 code", "It should return a non-200 HTTP status error")
 	p.AssertExpectations(t)
@@ -147,7 +157,7 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t 
 	msg.AddHashHeader(aHash)
 
 	w := NewWriter("http://an-address.com", testCollectionsOriginIdsMap, nativeRWHostHeader, p)
-	err = w.WriteToCollection(msg, methodeCollection)
+	_, err = w.WriteToCollection(msg, methodeCollection)
 
 	assert.Error(t, err, "It should return an error")
 	p.AssertExpectations(t)

@@ -356,9 +356,9 @@ func (w *WriterMock) GetCollectionByOriginID(originID string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) error {
+func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) (string, error) {
 	args := w.Called(msg, collection)
-	return args.Error(0)
+	return args.String(0), args.Error(1)
 }
 
 func (w *WriterMock) ConnectivityCheck() (string, error) {
