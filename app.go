@@ -137,10 +137,10 @@ func main() {
 			logger.Errorf(nil, err, "Couldn't parse JSON for originId to collection map")
 		}
 
-		log.Infof("[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
+		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
 		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
-		log.Infof("[Startup] Using native writer configuration: %# v", writer)
+		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
 
 		mh := queue.NewMessageHandler(writer)
 
@@ -153,7 +153,7 @@ func main() {
 				Queue: *writeQueueHostHeader,
 			}
 			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
-			log.Infof("[Startup] Producer: %# v", messageProducer)
+			logger.Infof(nil, "[Startup] Producer: %# v", messageProducer)
 			mh.ForwardTo(messageProducer)
 		}
 
