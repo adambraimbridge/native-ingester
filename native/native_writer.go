@@ -11,7 +11,6 @@ import (
 	"net/http"
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	log "github.com/Sirupsen/logrus"
 	"strings"
 )
 
