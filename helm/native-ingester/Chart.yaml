@@ -1,0 +1,4 @@
+apiVersion: v1
+description: native-ingester Helm chart for Kubernetes
+name: native-ingester
+version: 0.0.0

@@ -1,6 +1,6 @@
 Native Ingester
 ===============
-[![CircleCI](https://circleci.com/gh/Financial-Times/native-ingester.svg?style=svg)](https://circleci.com/gh/Financial-Times/native-ingester) [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/native-ingester)](https://goreportcard.com/report/github.com/Financial-Times/native-ingester) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/native-ingester/badge.svg?branch=master)](https://coveralls.io/github/Financial-Times/native-ingester?branch=master) [![codecov](https://codecov.io/gh/Financial-Times/native-ingester/branch/master/graph/badge.svg)](https://codecov.io/gh/Financial-Times/native-ingester)
+[![CircleCI](https://circleci.com/gh/Financial-Times/native-ingester.svg?style=svg)](https://circleci.com/gh/Financial-Times/native-ingester) [![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/native-ingester)](https://goreportcard.com/report/github.com/Financial-Times/native-ingester) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/native-ingester/badge.svg)](https://coveralls.io/github/Financial-Times/native-ingester)
 
 Native ingester implements the following functionality:
 1. It consumes messages containing native CMS content or native CMS metadata from ONE queue topic.

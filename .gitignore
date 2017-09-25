@@ -1,6 +1,5 @@
 .idea/
-native-ingester.exe
-native-ingester
+/native-ingester*
 /.project
 
 vendor/*/

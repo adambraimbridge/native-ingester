@@ -9,9 +9,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
+	"strings"
 )
 
 const nativeHashHeader = "X-Native-Hash"
@@ -128,8 +128,9 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 	if err != nil {
 		return "Error in building request to check if the native writer is good to go", err
 	}
-	req.Host = nw.hostHeader
-
+	if len(strings.TrimSpace(nw.hostHeader)) > 0 {
+		req.Host = nw.hostHeader
+	}
 	resp, err := nw.httpClient.Do(req)
 	if err != nil {
 		return "Native writer is not good to go.", err

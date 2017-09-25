@@ -52,11 +52,10 @@ func main() {
 	})
 	readQueueHostHeader := app.String(cli.StringOpt{
 		Name:   "read-queue-host-header",
-		Value:  "kafka",
+		Value:  "",
 		Desc:   "The host header for the queue to read the messages from.",
 		EnvVar: "Q_READ_HOST_HEADER",
 	})
-
 	// Native writer configuration
 	nativeWriterAddress := app.String(cli.StringOpt{
 		Name:   "native-writer-address",
@@ -72,7 +71,7 @@ func main() {
 	})
 	nativeWriterHostHeader := app.String(cli.StringOpt{
 		Name:   "native-writer-host-header",
-		Value:  "nativerw",
+		Value:  "",
 		Desc:   "coco-specific header needed to reach the destination address",
 		EnvVar: "NATIVE_RW_HOST_HEADER",
 	})
@@ -82,7 +81,6 @@ func main() {
 		Desc:   "List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3",
 		EnvVar: "NATIVE_CONTENT_UUID_FIELDS",
 	})
-
 	// Write Queue configuration
 	writeQueueAddress := app.String(cli.StringOpt{
 		Name:   "write-queue-address",
@@ -98,7 +96,7 @@ func main() {
 	})
 	writeQueueHostHeader := app.String(cli.StringOpt{
 		Name:   "write-queue-host-header",
-		Value:  "kafka",
+		Value:  "",
 		Desc:   "The host header for the queue to write the messages to.",
 		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
@@ -128,10 +126,14 @@ func main() {
 			Addrs:                *readQueueAddresses,
 			Group:                *readQueueGroup,
 			Topic:                *readQueueTopic,
-			Queue:                *readQueueHostHeader,
 			ConcurrentProcessing: false,
 		}
 		logger.InitDefaultLogger(*appName)
+
+		if *readQueueHostHeader != "" {
+			srcConf.Queue = *readQueueHostHeader
+		}
+
 		var collectionsByOriginIds map[string]string
 		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
 			logger.Errorf(nil, err, "Couldn't parse JSON for originId to collection map")
@@ -150,7 +152,9 @@ func main() {
 			producerConfig = &producer.MessageProducerConfig{
 				Addr:  *writeQueueAddress,
 				Topic: *writeQueueTopic,
-				Queue: *writeQueueHostHeader,
+			}
+			if *writeQueueHostHeader != "" {
+				producerConfig.Queue = *writeQueueHostHeader
 			}
 			messageProducer = producer.NewMessageProducerWithHTTPClient(*producerConfig, httpClient)
 			logger.Infof(nil, "[Startup] Producer: %# v", messageProducer)

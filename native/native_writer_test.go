@@ -54,14 +54,18 @@ func setupMockNativeWriterService(t *testing.T, status int, hasHash bool) *httpt
 	}))
 }
 
-func setupMockNativeWriterGTG(t *testing.T, status int) *httptest.Server {
+func setupMockNativeWriterGTG(t *testing.T, status int, hostHeader string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if status != 200 {
 			w.WriteHeader(status)
 		}
 		assert.Equal(t, "GET", req.Method)
 		assert.Equal(t, httphandlers.GTGPath, req.URL.Path)
-		assert.Equal(t, nativeRWHostHeader, req.Host)
+		if hostHeader != "" {
+			assert.Equal(t, hostHeader, req.Host)
+		} else {
+			assert.NotEqual(t, hostHeader, req.Host)
+		}
 	}))
 }
 
@@ -166,9 +170,21 @@ func TestWriteContentBodyToCollectionFailBecauseOfNativeRWServiceNotAvailable(t 
 func TestConnectivityCheckSuccess(t *testing.T) {
 	p := new(ContentBodyParserMock)
 
-	nws := setupMockNativeWriterGTG(t, 200)
+	nws := setupMockNativeWriterGTG(t, 200, nativeRWHostHeader)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
+	msg, err := w.ConnectivityCheck()
+
+	assert.NoError(t, err, "It should not return an error")
+	assert.Equal(t, "Native writer is good to go.", msg, "It should return a positive message")
+}
+
+func TestConnectivityCheckSuccessWithoutHostHeader(t *testing.T) {
+	p := new(ContentBodyParserMock)
+
+	nws := setupMockNativeWriterGTG(t, 200, "")
+
+	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, "", p)
 	msg, err := w.ConnectivityCheck()
 
 	assert.NoError(t, err, "It should not return an error")
@@ -178,7 +194,7 @@ func TestConnectivityCheckSuccess(t *testing.T) {
 func TestConnectivityCheckFailNotGTG(t *testing.T) {
 	p := new(ContentBodyParserMock)
 
-	nws := setupMockNativeWriterGTG(t, 503)
+	nws := setupMockNativeWriterGTG(t, 503, nativeRWHostHeader)
 
 	w := NewWriter(nws.URL, testCollectionsOriginIdsMap, nativeRWHostHeader, p)
 	msg, err := w.ConnectivityCheck()
