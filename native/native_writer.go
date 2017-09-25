@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Financial-Times/go-logger"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +21,7 @@ const transactionIDHeader = "X-Request-Id"
 // Writer provides the functionalities to write in the native store
 type Writer interface {
 	GetCollectionByOriginID(originID string) (string, error)
-	WriteToCollection(msg NativeMessage, collection string) error
+	WriteToCollection(msg NativeMessage, collection string) (string, error)
 	ConnectivityCheck() (string, error)
 }
 
@@ -58,28 +59,25 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 	return nw.collections.getCollectionByOriginID(originID)
 }
 
-func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) error {
+func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		log.WithField("transaction_id", msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
-		return err
+		logger.NewEntry(msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		return contentUUID, err
 	}
-	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Start processing native publish event")
-
+	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).Error("Error marshalling message")
-		return err
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
+		return contentUUID, err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	log.WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Info("Built request URL for native writer")
-
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return err
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		return contentUUID, err
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -95,28 +93,30 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		log.WithError(err).WithField("transaction_id", msg.transactionID()).WithField("requestURL", requestURL).Error("Error calling native writer. Ignoring message.")
-		return err
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		return contentUUID, err
 	}
-	defer properClose(response)
+	defer properClose(msg.transactionID(), response)
 
 	if isNot2XXStatusCode(response.StatusCode) {
-		log.WithField("transaction_id", msg.transactionID()).WithField("responseStatusCode", response.StatusCode).Error("Native writer returned non-200 code")
-		return errors.New("Native writer returned non-200 code")
+		errMsg := "Native writer returned non-200 code"
+		err := errors.New(errMsg)
+		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
+		return contentUUID, err
 	}
 
-	log.WithField("transaction_id", msg.transactionID()).WithField("uuid", contentUUID).Info("Successfully finished processing native publish event")
-	return nil
+	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
+	return contentUUID, nil
 }
 
-func properClose(resp *http.Response) {
+func properClose(tid string, resp *http.Response) {
 	_, err := io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
-		log.WithError(err).Warn("Couldn't read response body")
+		logger.NewEntry(tid).WithError(err).Warn("Couldn't read response body")
 	}
 	err = resp.Body.Close()
 	if err != nil {
-		log.WithError(err).Warn("Couldn't close response body")
+		logger.NewEntry(tid).WithError(err).Warn("Couldn't close response body")
 	}
 }
 

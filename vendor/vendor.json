@@ -11,6 +11,12 @@
 			"versionExact": "0.1.0"
 		},
 		{
+			"checksumSHA1": "R32X8CuDAJV1JimomUEh9SFmc8s=",
+			"path": "github.com/Financial-Times/go-logger",
+			"revision": "83fc3e64dc5506fdb4e56b704949d157a121c76c",
+			"revisionTime": "2017-09-14T08:19:45Z"
+		},
+		{
 			"checksumSHA1": "GrgODPqXv7QebQjfjrxMHctK0wE=",
 			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
 			"revision": "0bb065111416c0de78db51acb926ba3a3ae3c4e2",
@@ -45,22 +51,6 @@
 			"revisionTime": "2016-03-23T11:15:42Z",
 			"version": "0.1.0",
 			"versionExact": "0.1.0"
-		},
-		{
-			"checksumSHA1": "YD7op+BalfdUK0lb28y6Yex6cBM=",
-			"path": "github.com/Sirupsen/logrus",
-			"revision": "c078b1e43f58d563c74cebe63c85789e76ddb627",
-			"revisionTime": "2017-02-07T11:49:02Z",
-			"version": "v0.11.2",
-			"versionExact": "v0.11.2"
-		},
-		{
-			"checksumSHA1": "Lglgc8iIRhqbqd8fpAZKpo/eqeY=",
-			"path": "github.com/Sirupsen/logrus/hooks/test",
-			"revision": "c078b1e43f58d563c74cebe63c85789e76ddb627",
-			"revisionTime": "2017-02-07T11:49:02Z",
-			"version": "v0.11.2",
-			"versionExact": "v0.11.2"
 		},
 		{
 			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
@@ -115,6 +105,18 @@
 			"versionExact": "v1.1.0"
 		},
 		{
+			"checksumSHA1": "BYvROBsiyAXK4sq6yhDe8RgT4LM=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
+			"revisionTime": "2017-08-22T13:27:46Z"
+		},
+		{
+			"checksumSHA1": "Kt+BhrXMyYvOc9TGiBVOSNn6wcc=",
+			"path": "github.com/sirupsen/logrus/hooks/test",
+			"revision": "89742aefa4b206dcf400792f3bd35b542998eb3b",
+			"revisionTime": "2017-08-22T13:27:46Z"
+		},
+		{
 			"checksumSHA1": "K0crHygPTP42i1nLKWphSlvOQJw=",
 			"path": "github.com/stretchr/objx",
 			"revision": "1a9d0bb9f541897e62256577b352fdbc1fb4fd94",
@@ -137,10 +139,22 @@
 			"versionExact": "v1.1.4"
 		},
 		{
-			"checksumSHA1": "giNF2H4W4ODU8/EYwBWo1cqB+x0=",
+			"checksumSHA1": "nqWNlnMmVpt628zzvyo6Yv2CX5Q=",
+			"path": "golang.org/x/crypto/ssh/terminal",
+			"revision": "eb71ad9bd329b5ac0fd0148dd99bd62e8be8e035",
+			"revisionTime": "2017-08-07T10:11:13Z"
+		},
+		{
+			"checksumSHA1": "yMZF9dXHnTzHIOvYzLfqvcsU4mQ=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "e4594059fe4cde2daf423055a596c2cd1e6c9adf",
-			"revisionTime": "2017-02-23T22:36:15Z"
+			"revision": "07c182904dbd53199946ba614a412c61d3c548f5",
+			"revisionTime": "2017-08-16T12:26:40Z"
+		},
+		{
+			"checksumSHA1": "gVfCD++7aVcdKF2spv6XkEM/wYw=",
+			"path": "golang.org/x/sys/windows",
+			"revision": "07c182904dbd53199946ba614a412c61d3c548f5",
+			"revisionTime": "2017-08-16T12:26:40Z"
 		}
 	],
 	"rootPath": "github.com/Financial-Times/native-ingester"
