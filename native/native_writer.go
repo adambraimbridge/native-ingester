@@ -11,6 +11,7 @@ import (
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	log "github.com/Sirupsen/logrus"
+	"strings"
 )
 
 const nativeHashHeader = "X-Native-Hash"
@@ -26,14 +27,15 @@ type Writer interface {
 type nativeWriter struct {
 	address     string
 	collections nativeCollections
+	hostHeader  string
 	httpClient  http.Client
 	bodyParser  ContentBodyParser
 }
 
 // NewWriter returns a new instance of a native writer
-func NewWriter(address string, collectionsOriginIdsMap map[string]string, parser ContentBodyParser) Writer {
+func NewWriter(address string, collectionsOriginIdsMap map[string]string, hostHeader string, parser ContentBodyParser) Writer {
 	collections := newNativeCollections(collectionsOriginIdsMap)
-	return &nativeWriter{address, collections, http.Client{}, parser}
+	return &nativeWriter{address, collections, hostHeader, http.Client{}, parser}
 }
 
 type nativeCollections struct {
@@ -86,6 +88,10 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 		request.Header.Set(header, value)
 	}
 
+	if len(strings.TrimSpace(nw.hostHeader)) > 0 {
+		request.Host = nw.hostHeader
+	}
+
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
@@ -122,6 +128,9 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 	req, err := http.NewRequest("GET", nw.address+httphandlers.GTGPath, nil)
 	if err != nil {
 		return "Error in building request to check if the native writer is good to go", err
+	}
+	if len(strings.TrimSpace(nw.hostHeader)) > 0 {
+		req.Host = nw.hostHeader
 	}
 	resp, err := nw.httpClient.Do(req)
 	if err != nil {
