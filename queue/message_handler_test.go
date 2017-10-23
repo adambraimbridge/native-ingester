@@ -15,6 +15,7 @@ import (
 const (
 	methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
 	methodeCollection     = "methode"
+	contentType           = "anyType"
 )
 
 var goodMsgHeaders = map[string]string{
@@ -44,7 +45,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 
 	p := new(ProducerMock)
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.producer = p
 	mh.HandleMessage(goodMsg)
 
@@ -60,7 +61,7 @@ func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	p := new(ProducerMock)
 	p.On("SendMessage", "", mock.AnythingOfType("producer.Message")).Return(nil)
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -73,7 +74,7 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 
 	p := new(ProducerMock)
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
 	mh.HandleMessage(badBodyMsg)
 
@@ -87,7 +88,7 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 
 	p := new(ProducerMock)
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -102,7 +103,7 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 
 	p := new(ProducerMock)
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
@@ -119,7 +120,7 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 	p := new(ProducerMock)
 	p.On("SendMessage", "", mock.AnythingOfType("producer.Message")).Return(errors.New("Today, I am not writing on a queue."))
 
-	mh := NewMessageHandler(w)
+	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
 	mh.HandleMessage(goodMsg)
 
