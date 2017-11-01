@@ -100,6 +100,12 @@ func main() {
 		Desc:   "The host header for the queue to write the messages to.",
 		EnvVar: "Q_WRITE_HOST_HEADER",
 	})
+	contentType := app.String(cli.StringOpt{
+		Name:   "content-type",
+		Value:  "",
+		Desc:   "The type of the content the application is able to handle.",
+		EnvVar: "CONTENT_TYPE",
+	})
 
 	appName := app.String(cli.StringOpt{
 		Name:   "appName",
@@ -144,7 +150,7 @@ func main() {
 		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
 		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
 
-		mh := queue.NewMessageHandler(writer)
+		mh := queue.NewMessageHandler(writer, *contentType)
 
 		var messageProducer producer.MessageProducer
 		var producerConfig *producer.MessageProducerConfig
