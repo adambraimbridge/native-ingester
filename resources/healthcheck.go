@@ -2,13 +2,13 @@ package resources
 
 import (
 	"net/http"
+	"time"
 
-	fthealth "github.com/Financial-Times/go-fthealth/v1a"
+	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/Financial-Times/service-status-go/gtg"
-
 	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/service-status-go/gtg"
 )
 
 // HealthCheck implements the healthcheck for the native ingester
@@ -29,6 +29,7 @@ func NewHealthCheck(c consumer.MessageConsumer, p producer.MessageProducer, nw n
 
 func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 	return fthealth.Check{
+		ID:               "consumer-queue-proxy",
 		BusinessImpact:   "Native content or metadata will not reach this app, nor will they be stored in native store",
 		Name:             "ConsumerQueueProxyReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
@@ -40,6 +41,7 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 
 func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 	return fthealth.Check{
+		ID:               "producer-queue-proxy",
 		BusinessImpact:   "Content or metadata will not reach the end of the publishing pipeline",
 		Name:             "ProducerQueueProxyReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
@@ -51,6 +53,7 @@ func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 
 func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 	return fthealth.Check{
+		ID:               "native-writer",
 		BusinessImpact:   "Content or metadata will not be written in the native store nor will they reach the end of the publishing pipeline",
 		Name:             "NativeWriterReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
@@ -66,12 +69,18 @@ func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) 
 	if hc.producer != nil {
 		checks = append(checks, hc.producerQueueCheck())
 	}
-	h := fthealth.HandlerParallel(
-		"Dependent services healthcheck",
-		"Checks if all the dependent services are reachable and healthy.",
-		checks...,
-	)
-	return h
+
+	healthCheck := fthealth.TimedHealthCheck{
+		HealthCheck: fthealth.HealthCheck{
+			SystemCode:  "native-ingester",
+			Name:        "Native Ingester Healthcheck",
+			Description: "It checks if kafka proxy and native writer are available",
+			Checks:      checks,
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	return fthealth.Handler(healthCheck)
 }
 
 func (hc *HealthCheck) GTG() gtg.Status {
