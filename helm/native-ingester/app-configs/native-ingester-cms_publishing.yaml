@@ -8,3 +8,8 @@ env:
   NATIVE_CONTENT_UUID_FIELDS: "uuid,post.uuid,data.uuidv3,id"
   NATIVE_RW_COLLECTIONS_BY_ORIGINS: "\"{\\\"http://cmdb.ft.com/systems/methode-web-pub\\\": \\\"methode\\\", \\\"http://cmdb.ft.com/systems/wordpress\\\": \\\"wordpress\\\", \\\"http://cmdb.ft.com/systems/next-video-editor\\\": \\\"video\\\"}\""
   QUEUE_WRITE_TOPIC: "NativeCmsPublicationEvents"
+resources:
+  requests:
+    memory: 250Mi
+  limits:
+    memory: 512Mi
