@@ -8,3 +8,8 @@ env:
   NATIVE_CONTENT_UUID_FIELDS: "uuid,post.uuid,data.uuidv3"
   NATIVE_RW_COLLECTIONS_BY_ORIGINS: "\"{\\\"http://cmdb.ft.com/systems/methode-web-pub\\\": \\\"v1-metadata\\\", \\\"http://cmdb.ft.com/systems/pac\\\":\\\"pac-metadata\\\"}\""
   QUEUE_WRITE_TOPIC: "NativeCmsMetadataPublicationEvents"
+resources:
+  requests:
+    memory: 200Mi
+  limits:
+    memory: 512Mi
