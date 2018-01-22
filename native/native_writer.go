@@ -135,6 +135,12 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 	if err != nil {
 		return "Native writer is not good to go.", err
 	}
+	defer func() {
+		_, err = io.Copy(ioutil.Discard, resp.Body)
+		if err != nil {
+			resp.Body.Close()
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return "Native writer is not good to go.", fmt.Errorf("GTG HTTP status code is %v", resp.StatusCode)
 	}
