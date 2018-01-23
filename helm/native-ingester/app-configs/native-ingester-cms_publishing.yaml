@@ -11,3 +11,5 @@ env:
 resources:
   requests:
     memory: 250Mi
+  limits:
+    memory: 512Mi
