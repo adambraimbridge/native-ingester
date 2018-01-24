@@ -8,10 +8,9 @@ import (
 
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/native-ingester/native"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-
-	"github.com/Financial-Times/native-ingester/native"
 )
 
 func TestNewHealthCheckWithoutProducer(t *testing.T) {

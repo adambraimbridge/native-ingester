@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Financial-Times/go-logger"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
+
+	"github.com/Financial-Times/go-logger"
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	"strings"
 )
 
 const nativeHashHeader = "X-Native-Hash"

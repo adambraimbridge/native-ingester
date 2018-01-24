@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/Financial-Times/go-logger"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/Financial-Times/native-ingester/native"
@@ -19,7 +19,6 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"net/http/pprof"
 )
 
 func main() {
@@ -196,7 +195,6 @@ func enableHealthCheck(port string, consumer consumer.MessageConsumer, producer 
 	r.HandleFunc(httphandlers.BuildInfoPath, httphandlers.BuildInfoHandler).Methods("GET")
 	r.HandleFunc(httphandlers.PingPath, httphandlers.PingHandler).Methods("GET")
 
-	attachProfiler(r)
 	http.Handle("/", r)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
@@ -218,11 +216,4 @@ func startMessageConsumption(messageConsumer consumer.MessageConsumer) {
 	<-ch
 	messageConsumer.Stop()
 	consumerWaitGroup.Wait()
-}
-
-func attachProfiler(router *mux.Router) {
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 }
