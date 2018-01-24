@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/Financial-Times/go-logger"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/Financial-Times/native-ingester/native"

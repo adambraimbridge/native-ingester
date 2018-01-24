@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Financial-Times/go-logger"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
+
+	"github.com/Financial-Times/go-logger"
 
 	"github.com/Financial-Times/service-status-go/httphandlers"
-	"strings"
 )
 
 const nativeHashHeader = "X-Native-Hash"
@@ -135,6 +136,10 @@ func (nw nativeWriter) ConnectivityCheck() (string, error) {
 	if err != nil {
 		return "Native writer is not good to go.", err
 	}
+	defer func() {
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return "Native writer is not good to go.", fmt.Errorf("GTG HTTP status code is %v", resp.StatusCode)
 	}

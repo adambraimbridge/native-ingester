@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
