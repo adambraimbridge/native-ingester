@@ -32,7 +32,9 @@ spec:
       - name: {{ .Values.service.name }} 
         image: "{{ .Values.image.repository }}:{{ .Chart.Version }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        env: 
+        env:
+        - name: APP_NAME
+          value: {{ .Values.service.name }}
         - name: Q_READ_ADDR
           valueFrom:
             configMapKeyRef:
@@ -44,6 +46,8 @@ spec:
           value: {{ .Values.env.QUEUE_READ_TOPIC }}
         - name: NATIVE_CONTENT_UUID_FIELDS
           value: {{ .Values.env.NATIVE_CONTENT_UUID_FIELDS }}
+        - name: CONTENT_TYPE
+          value: {{ .Values.env.CONTENT_TYPE }}
         - name: NATIVE_RW_ADDRESS
           value: "http://nativerw:8080"
         - name: NATIVE_RW_COLLECTIONS_BY_ORIGINS
