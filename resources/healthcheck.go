@@ -33,7 +33,7 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 		BusinessImpact:   "Native content or metadata will not reach this app, nor will they be stored in native store",
 		Name:             "ConsumerQueueProxyReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
-		Severity:         1,
+		Severity:         2,
 		TechnicalSummary: "Consumer message queue proxy is not reachable/healthy",
 		Checker:          hc.consumer.ConnectivityCheck,
 	}
@@ -45,7 +45,7 @@ func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 		BusinessImpact:   "Content or metadata will not reach the end of the publishing pipeline",
 		Name:             "ProducerQueueProxyReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
-		Severity:         1,
+		Severity:         2,
 		TechnicalSummary: "Producer message queue proxy is not reachable/healthy",
 		Checker:          hc.producer.ConnectivityCheck,
 	}
@@ -57,7 +57,7 @@ func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 		BusinessImpact:   "Content or metadata will not be written in the native store nor will they reach the end of the publishing pipeline",
 		Name:             "NativeWriterReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
-		Severity:         1,
+		Severity:         2,
 		TechnicalSummary: "Native writer is not reachable/healthy",
 		Checker:          hc.writer.ConnectivityCheck,
 	}
