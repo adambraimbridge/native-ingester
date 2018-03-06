@@ -2,4 +2,5 @@
 /native-ingester*
 /.project
 
-vendor/*/
+/vendor/*
+!/vendor/vendor.json
