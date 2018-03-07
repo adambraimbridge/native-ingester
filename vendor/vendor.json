@@ -29,10 +29,10 @@
 		{
 			"checksumSHA1": "q9JT3TwmEroQOSxy4Y5OL1p/8pA=",
 			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "0746e9c262c0316e95c464838c51d3513fdd1e25",
-			"revisionTime": "2018-03-06T13:47:26Z",
-			"version": "0.4.1-config-bugfix-rc1",
-			"versionExact": "0.4.1-config-bugfix-rc1"
+			"revision": "b1eff4c76732c1da45280f3244de256925f70164",
+			"revisionTime": "2018-03-07T10:00:40Z",
+			"version": "0.4.1",
+			"versionExact": "0.4.1"
 		},
 		{
 			"checksumSHA1": "fqpohN7Qp2qj7TLMbUxh/cK4oH0=",
