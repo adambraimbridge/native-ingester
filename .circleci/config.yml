@@ -39,9 +39,9 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
   dockerfile:
-    working_directory: /draft-content-suggestions
+    working_directory: /native-ingester
     docker:
-      - image: docker:17.09.0-ce-git
+      - image: docker:17.09.1-ce-git
     steps:
       - checkout
       - setup_docker_engine
