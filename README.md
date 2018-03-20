@@ -53,21 +53,7 @@ Options:
   --write-queue-host-header="kafka"             The host header for the queue to write the messages to. ($Q_WRITE_HOST_HEADER)
 ```
 
-## Deployment to CoCo
-- This service should be deployed in the publishing clusters.
-- Read detailed explanation of the [CoCo Environments](https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/environments)
-- Follow instructions on how to deploy outlined in the [Coco Deployment Process document](https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/coco/deploy-process)
-
-#### Steps:
-- update version in [github/FinancialTimes/pub-service-files/services.yaml](https://github.com/Financial-Times/pub-service-files/blob/master/services.yaml)  
-
-- if necessary update:
-     - [native-ingester-cms@.service](https://github.com/Financial-Times/up-service-files/blob/master/native-ingester-cms%40.service)
-     - [native-ingester-cms-sidekick@.service](https://github.com/Financial-Times/up-service-files/blob/master/native-ingester-cms-sidekick%40.service)
-     - [native-ingester-metadata@.service](https://github.com/Financial-Times/up-service-files/blob/master/native-ingester-metadata%40.service)
-     - [native-ingester-metadata-sidekick@.service](https://github.com/Financial-Times/up-service-files/blob/master/native-ingester-metadata-sidekick%40.service)
-
-## Admin endpoints (CoCo)
+## Admin endpoints
 
   - `https://{host}/__native-store-{type}/__health`
   - `https://{host}/__native-store-{type}/__gtg`
