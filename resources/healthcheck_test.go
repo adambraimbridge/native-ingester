@@ -2,24 +2,22 @@ package resources
 
 import (
 	"errors"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/native-ingester/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestNewHealthCheckWithoutProducer(t *testing.T) {
-	nw := new(WriterMock)
-	hc := NewHealthCheck(
-		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
-		nil,
-		nw,
-	)
+	if testing.Short() {
+		t.Skip("Skipping test as it requires a connection to Kafka.")
+	}
+
+	c, _ := kafka.NewConsumer(kafka.Config{"localhost:2181", "test", []string{"testTopic"}, nil, nil})
+	nw := new(mocks.WriterMock)
+	hc := NewHealthCheck(c,nil, nw)
 
 	assert.Nil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
@@ -27,12 +25,14 @@ func TestNewHealthCheckWithoutProducer(t *testing.T) {
 }
 
 func TestNewHealthCheckWithProducer(t *testing.T) {
-	nw := new(WriterMock)
-	hc := NewHealthCheck(
-		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
-		producer.NewMessageProducer(producer.MessageProducerConfig{}),
-		nw,
-	)
+	if testing.Short() {
+		t.Skip("Skipping test as it requires a connection to Kafka.")
+	}
+
+	c, _ := kafka.NewConsumer(kafka.Config{"localhost:2181", "test", []string{"testTopic"}, nil, nil})
+	p, _ := kafka.NewProducer("localhost:9092", "testTopic", nil)
+	nw := new(mocks.WriterMock)
+	hc := NewHealthCheck(c, p, nw)
 
 	assert.NotNil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
@@ -40,9 +40,9 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 }
 
 func TestHappyHealthCheckWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	hc := HealthCheck{
 		consumer: c,
@@ -62,12 +62,12 @@ func TestHappyHealthCheckWithoutProducer(t *testing.T) {
 }
 
 func TestHappyHealthCheckWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -87,9 +87,9 @@ func TestHappyHealthCheckWithProducer(t *testing.T) {
 }
 
 func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(errors.New("Screw you guys I'm going home!"))
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	hc := HealthCheck{
 		consumer: c,
@@ -109,12 +109,12 @@ func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
 }
 
 func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(errors.New("Screw you guys I'm going home!"))
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return( nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -134,9 +134,9 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 }
 
 func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return( nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
 	hc := HealthCheck{
 		consumer: c,
@@ -156,12 +156,12 @@ func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
 }
 
 func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -181,12 +181,12 @@ func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
 }
 
 func TestUnhappyProducerHealthCheck(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a unhappy producer", errors.New("I'm not fat, I'm big-boned."))
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(errors.New("I'm not fat, I'm big-boned."))
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -206,9 +206,9 @@ func TestUnhappyProducerHealthCheck(t *testing.T) {
 }
 
 func TestHappyGTGCheckWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	hc := HealthCheck{
 		consumer: c,
@@ -222,12 +222,12 @@ func TestHappyGTGCheckWithoutProducer(t *testing.T) {
 }
 
 func TestHappyGTGCheckWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return( nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -241,9 +241,9 @@ func TestHappyGTGCheckWithProducer(t *testing.T) {
 }
 
 func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(errors.New("Screw you guys I'm going home!"))
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	hc := HealthCheck{
 		consumer: c,
@@ -257,12 +257,12 @@ func TestUnhappyConsumerGTGWithoutProducer(t *testing.T) {
 }
 
 func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm an unhappy consumer", errors.New("Screw you guys I'm going home!"))
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(errors.New("Screw you guys I'm going home!"))
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -276,9 +276,9 @@ func TestUnhappyConsumerGTGWithProducer(t *testing.T) {
 }
 
 func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
 	hc := HealthCheck{
 		consumer: c,
@@ -292,12 +292,12 @@ func TestUnhappyNativeWriterGTGWithoutProducer(t *testing.T) {
 }
 
 func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a happy producer", nil)
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -311,12 +311,12 @@ func TestUnhappyNativeWriterGTGWithProducer(t *testing.T) {
 }
 
 func TestUnhappyGTGCheck(t *testing.T) {
-	c := new(ConsumerMock)
-	c.On("ConnectivityCheck").Return("I'm a happy consumer", nil)
-	nw := new(WriterMock)
+	c := new(mocks.ConsumerMock)
+	c.On("ConnectivityCheck").Return(nil)
+	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an happy writer", nil)
-	p := new(ProducerMock)
-	p.On("ConnectivityCheck").Return("I'm a unhappy producer", errors.New("I'm not fat, I'm big-boned."))
+	p := new(mocks.ProducerMock)
+	p.On("ConnectivityCheck").Return(errors.New("I'm not fat, I'm big-boned."))
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -327,54 +327,4 @@ func TestUnhappyGTGCheck(t *testing.T) {
 
 	assert.False(t, status.GoodToGo)
 	assert.Equal(t, "I'm not fat, I'm big-boned.", status.Message)
-}
-
-type ConsumerMock struct {
-	mock.Mock
-}
-
-func (c *ConsumerMock) ConnectivityCheck() (string, error) {
-	args := c.Called()
-	return args.String(0), args.Error(1)
-}
-
-func (c *ConsumerMock) Start() {
-	c.Called()
-}
-
-func (c *ConsumerMock) Stop() {
-	c.Called()
-}
-
-type WriterMock struct {
-	mock.Mock
-}
-
-func (w *WriterMock) GetCollectionByOriginID(originID string) (string, error) {
-	args := w.Called(originID)
-	return args.String(0), args.Error(1)
-}
-
-func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) (string, error) {
-	args := w.Called(msg, collection)
-	return args.String(0), args.Error(1)
-}
-
-func (w *WriterMock) ConnectivityCheck() (string, error) {
-	args := w.Called()
-	return args.String(0), args.Error(1)
-}
-
-type ProducerMock struct {
-	mock.Mock
-}
-
-func (p *ProducerMock) ConnectivityCheck() (string, error) {
-	args := p.Called()
-	return args.String(0), args.Error(1)
-}
-
-func (p *ProducerMock) SendMessage(uuid string, msg producer.Message) error {
-	args := p.Called(uuid, msg)
-	return args.Error(0)
 }

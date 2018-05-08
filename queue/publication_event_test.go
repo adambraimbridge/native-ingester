@@ -3,7 +3,7 @@ package queue
 import (
 	"testing"
 
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,17 +19,17 @@ var someMsgHeaders = map[string]string{
 	"Native-Hash":       expectedHash,
 }
 
-var aMsg = consumer.Message{
+var aMsg = kafka.FTMessage{
 	Headers: someMsgHeaders,
 	Body:    `{"foo":"bar"}`,
 }
 
-var aMsgWithBadBody = consumer.Message{
+var aMsgWithBadBody = kafka.FTMessage{
 	Headers: someMsgHeaders,
 	Body:    `I'm not JSON`,
 }
 
-var aMsgWithoutTimestamp = consumer.Message{
+var aMsgWithoutTimestamp = kafka.FTMessage{
 	Headers: map[string]string{},
 	Body:    `{"foo":"bar"}`,
 }

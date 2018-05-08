@@ -8,6 +8,9 @@ jobs:
           GOPATH: /go
           CIRCLE_TEST_REPORTS: /tmp/test-results
           CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
+      - image: blacktop/kafka:0.8
+        environment:
+          KAFKA_BROKER_ID: 1
     steps:
       - checkout
       - run:
@@ -15,7 +18,7 @@ jobs:
           command: |
             go get -u github.com/mattn/goveralls
             go get -u github.com/jstemmer/go-junit-report
-            go get -u github.com/kardianos/govendor
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             go get -u github.com/haya14busa/goverage
       - run:
           name: Test Results
@@ -23,15 +26,15 @@ jobs:
             mkdir -p ${CIRCLE_TEST_REPORTS}
             mkdir -p ${CIRCLE_COVERAGE_REPORT}
       - run:
-          name: Govendor Sync
-          command: govendor sync -v
+          name: Go Dep
+          command: dep ensure -vendor-only
       - run:
           name: Go Build
           command: go build -v
       - run:
           name: Run Tests
           command: |
-            govendor test -race -v +local | /go/bin/go-junit-report > ${CIRCLE_TEST_REPORTS}/main.xml
+            go test -race -v ./... | /go/bin/go-junit-report > ${CIRCLE_TEST_REPORTS}/main.xml
             goverage -covermode=atomic -race -coverprofile=${CIRCLE_COVERAGE_REPORT}/coverage.out ./...
       - run:
           name: Upload Coverage

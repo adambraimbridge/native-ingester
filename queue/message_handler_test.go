@@ -5,9 +5,8 @@ import (
 	"testing"
 
 	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/native-ingester/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,12 +23,12 @@ var goodMsgHeaders = map[string]string{
 	"Origin-System-Id":  methodeOriginSystemID,
 }
 
-var goodMsg = consumer.Message{
+var goodMsg = kafka.FTMessage{
 	Body:    "{}",
 	Headers: goodMsgHeaders,
 }
 
-var badBodyMsg = consumer.Message{
+var badBodyMsg = kafka.FTMessage{
 	Body:    "I am not JSON",
 	Headers: goodMsgHeaders,
 }
@@ -39,11 +38,11 @@ func init() {
 }
 
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
-	p := new(ProducerMock)
+	p := new(mocks.ProducerMock)
 
 	mh := NewMessageHandler(w, contentType)
 	mh.producer = p
@@ -54,12 +53,12 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 }
 
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
-	p := new(ProducerMock)
-	p.On("SendMessage", "", mock.AnythingOfType("producer.Message")).Return(nil)
+	p := new(mocks.ProducerMock)
+	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
 
 	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
@@ -70,9 +69,9 @@ func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 }
 
 func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 
-	p := new(ProducerMock)
+	p := new(mocks.ProducerMock)
 
 	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
@@ -83,10 +82,10 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 }
 
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return("", errors.New("Collection Not Found"))
 
-	p := new(ProducerMock)
+	p := new(mocks.ProducerMock)
 
 	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
@@ -97,11 +96,11 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 }
 
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", errors.New("I do not want to write today!"))
 
-	p := new(ProducerMock)
+	p := new(mocks.ProducerMock)
 
 	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
@@ -113,12 +112,12 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 
 func TestForwardFailBecauseOfProducer(t *testing.T) {
 	hook := logger.NewTestHook("native-ingester")
-	w := new(WriterMock)
+	w := new(mocks.WriterMock)
 	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
-	p := new(ProducerMock)
-	p.On("SendMessage", "", mock.AnythingOfType("producer.Message")).Return(errors.New("Today, I am not writing on a queue."))
+	p := new(mocks.ProducerMock)
+	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(errors.New("Today, I am not writing on a queue."))
 
 	mh := NewMessageHandler(w, contentType)
 	mh.ForwardTo(p)
@@ -128,37 +127,4 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 	p.AssertExpectations(t)
 	assert.Equal(t, "error", hook.LastEntry().Level.String())
 	assert.Equal(t, "Failed to forward consumed message to a different queue", hook.LastEntry().Message)
-}
-
-type WriterMock struct {
-	mock.Mock
-}
-
-func (w *WriterMock) GetCollectionByOriginID(originID string) (string, error) {
-	args := w.Called(originID)
-	return args.String(0), args.Error(1)
-}
-
-func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) (string, error) {
-	args := w.Called(msg, collection)
-	return args.String(0), args.Error(1)
-}
-
-func (w *WriterMock) ConnectivityCheck() (string, error) {
-	args := w.Called()
-	return args.String(0), args.Error(1)
-}
-
-type ProducerMock struct {
-	mock.Mock
-}
-
-func (p *ProducerMock) ConnectivityCheck() (string, error) {
-	args := p.Called()
-	return args.String(0), args.Error(1)
-}
-
-func (p *ProducerMock) SendMessage(uuid string, msg producer.Message) error {
-	args := p.Called(uuid, msg)
-	return args.Error(0)
 }

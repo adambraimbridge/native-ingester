@@ -14,16 +14,10 @@
   version = "0.0.2"
 
 [[projects]]
-  name = "github.com/Financial-Times/message-queue-go-producer"
-  packages = ["producer"]
-  revision = "0bb065111416c0de78db51acb926ba3a3ae3c4e2"
-  version = "0.2.0"
-
-[[projects]]
-  name = "github.com/Financial-Times/message-queue-gonsumer"
-  packages = ["consumer"]
-  revision = "b1eff4c76732c1da45280f3244de256925f70164"
-  version = "0.4.1"
+  name = "github.com/Financial-Times/kafka-client-go"
+  packages = ["kafka"]
+  revision = "b8bc1f9a00df60e27fbf404a42f5f624336cee59"
+  version = "0.8.0"
 
 [[projects]]
   name = "github.com/Financial-Times/service-status-go"
@@ -36,10 +30,40 @@
   version = "0.1.0"
 
 [[projects]]
+  name = "github.com/Shopify/sarama"
+  packages = ["."]
+  revision = "f7be6aa2bc7b2e38edf816b08b582782194a1c02"
+  version = "v1.16.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/eapache/go-resiliency"
+  packages = ["breaker"]
+  revision = "ea41b0fad31007accc7f806884dcdf3da98b79ce"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/eapache/go-xerial-snappy"
+  packages = ["."]
+  revision = "bb955e01b9346ac19dc29eb16586c90ded99a98c"
+
+[[projects]]
+  name = "github.com/eapache/queue"
+  packages = ["."]
+  revision = "44cc805cf13205b55f69e14bcb69867d1ae92f98"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "553a641470496b2327abcac10b36396bd98e45c9"
 
 [[projects]]
   branch = "master"
@@ -70,10 +94,40 @@
   revision = "e874b168d07ecc7808bc950a17998a8aa3141d82"
 
 [[projects]]
+  name = "github.com/pierrec/lz4"
+  packages = ["."]
+  revision = "2fcda4cb7018ce05a25959d2fe08c83e3329f169"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/pierrec/xxHash"
+  packages = ["xxHash32"]
+  revision = "f051bb7f1d1aaf1b5a665d74fb6b0217712c69f7"
+  version = "v0.1.1"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/rcrowley/go-metrics"
+  packages = ["."]
+  revision = "e2704e165165ec55d062f5919b4b29494e9fa790"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/samuel/go-zookeeper"
+  packages = ["zk"]
+  revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
 
 [[projects]]
   name = "github.com/satori/go.uuid"
@@ -104,6 +158,18 @@
   version = "v1.1.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/wvanbergen/kafka"
+  packages = ["consumergroup"]
+  revision = "e2edea948ddfee841ea9a263b32ccca15f7d6c2f"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/wvanbergen/kazoo-go"
+  packages = ["."]
+  revision = "f72d8611297a7cf105da904c04198ad701a60101"
+
+[[projects]]
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   revision = "eb71ad9bd329b5ac0fd0148dd99bd62e8be8e035"
@@ -119,6 +185,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acaf3c59ffa9e5d274cfef671ad77c7c0129b15e0cd72e3c42575cdef4264685"
+  inputs-digest = "63ec378425e81005a4a949a1705c57447b606ed4df63cd3e5cabfb473e15ba00"
   solver-name = "gps-cdcl"
   solver-version = 1

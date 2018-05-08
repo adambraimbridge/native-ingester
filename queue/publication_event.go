@@ -4,13 +4,12 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/native"
 )
 
 type publicationEvent struct {
-	consumer.Message
+	kafka.FTMessage
 }
 
 func (pe *publicationEvent) transactionID() string {
@@ -42,8 +41,8 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 	return msg, nil
 }
 
-func (pe *publicationEvent) producerMsg() producer.Message {
-	return producer.Message{
+func (pe *publicationEvent) producerMsg() kafka.FTMessage {
+	return kafka.FTMessage{
 		Headers: pe.Headers,
 		Body:    pe.Body,
 	}
