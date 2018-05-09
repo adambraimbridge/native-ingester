@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -158,17 +157,10 @@ func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Prod
 }
 
 func startMessageConsumption(messageConsumer kafka.Consumer, mh func(message kafka.FTMessage) error) {
-	var consumerWaitGroup sync.WaitGroup
-	consumerWaitGroup.Add(1)
-
-	go func() {
-		messageConsumer.StartListening(mh)
-		consumerWaitGroup.Done()
-	}()
+	messageConsumer.StartListening(mh)
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 	messageConsumer.Shutdown()
-	consumerWaitGroup.Wait()
 }
