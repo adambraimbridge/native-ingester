@@ -33,7 +33,7 @@ func main() {
 	readQueueAddresses := app.Strings(cli.StringsOpt{
 		Name:   "read-queue-addresses",
 		Value:  nil,
-		Desc:   "Addresses to connect to the consumer queue (URLs).",
+		Desc:   "Zookeeper addresses (host:port) to connect to the consumer queue.",
 		EnvVar: "Q_READ_ADDR",
 	})
 	readQueueGroup := app.String(cli.StringOpt{
@@ -52,20 +52,14 @@ func main() {
 	nativeWriterAddress := app.String(cli.StringOpt{
 		Name:   "native-writer-address",
 		Value:  "",
-		Desc:   "Address of service that writes persistently the native content",
+		Desc:   "Address (URL) of service that writes persistently the native content",
 		EnvVar: "NATIVE_RW_ADDRESS",
 	})
 	nativeWriterCollectionsByOrigins := app.String(cli.StringOpt{
 		Name:   "native-writer-collections-by-origins",
-		Value:  "[]",
-		Desc:   "Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}]",
+		Value:  "{}",
+		Desc:   "Mapping from originId (URI) to native collection name, in JSON format. e.g. {\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}",
 		EnvVar: "NATIVE_RW_COLLECTIONS_BY_ORIGINS",
-	})
-	nativeWriterHostHeader := app.String(cli.StringOpt{
-		Name:   "native-writer-host-header",
-		Value:  "",
-		Desc:   "coco-specific header needed to reach the destination address",
-		EnvVar: "NATIVE_RW_HOST_HEADER",
 	})
 	contentUUIDfields := app.Strings(cli.StringsOpt{
 		Name:   "content-uuid-fields",
@@ -77,7 +71,7 @@ func main() {
 	writeQueueAddress := app.String(cli.StringOpt{
 		Name:   "write-queue-address",
 		Value:  "",
-		Desc:   "Address to connect to the producer queue (URL).",
+		Desc:   "Kafka address (host:port) to connect to the producer queue.",
 		EnvVar: "Q_WRITE_ADDR",
 	})
 	writeQueueTopic := app.String(cli.StringOpt{
@@ -89,7 +83,7 @@ func main() {
 	contentType := app.String(cli.StringOpt{
 		Name:   "content-type",
 		Value:  "",
-		Desc:   "The type of the content the application is able to handle.",
+		Desc:   "The type of the content (for logging purposes, e.g. \"Content\" or \"Annotations\") the application is able to handle.",
 		EnvVar: "CONTENT_TYPE",
 	})
 
@@ -110,7 +104,7 @@ func main() {
 
 		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
-		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, *nativeWriterHostHeader, bodyParser)
+		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, bodyParser)
 		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
 
 		mh := queue.NewMessageHandler(writer, *contentType)
