@@ -28,24 +28,24 @@ func NewHealthCheck(c kafka.Consumer, p kafka.Producer, nw native.Writer) *Healt
 
 func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 	return fthealth.Check{
-		ID:               "consumer-queue-proxy",
+		ID:               "consumer-queue",
 		BusinessImpact:   "Native content or metadata will not reach this app, nor will they be stored in native store",
-		Name:             "ConsumerQueueProxyReachable",
+		Name:             "ConsumerQueueReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
 		Severity:         2,
-		TechnicalSummary: "Consumer message queue proxy is not reachable/healthy",
+		TechnicalSummary: "Consumer message queue is not reachable/healthy",
 		Checker:          check(hc.consumer.ConnectivityCheck),
 	}
 }
 
 func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 	return fthealth.Check{
-		ID:               "producer-queue-proxy",
+		ID:               "producer-queue",
 		BusinessImpact:   "Content or metadata will not reach the end of the publishing pipeline",
-		Name:             "ProducerQueueProxyReachable",
+		Name:             "ProducerQueueReachable",
 		PanicGuide:       "https://dewey.ft.com/native-ingester.html",
 		Severity:         2,
-		TechnicalSummary: "Producer message queue proxy is not reachable/healthy",
+		TechnicalSummary: "Producer message queue is not reachable/healthy",
 		Checker:          check(hc.producer.ConnectivityCheck),
 	}
 }
@@ -85,7 +85,7 @@ func (hc *HealthCheck) Handler() func(w http.ResponseWriter, req *http.Request) 
 		HealthCheck: fthealth.HealthCheck{
 			SystemCode:  "native-ingester",
 			Name:        "Native Ingester Healthcheck",
-			Description: "It checks if kafka proxy and native writer are available",
+			Description: "It checks if kafka and native writer are available",
 			Checks:      checks,
 		},
 		Timeout: 10 * time.Second,

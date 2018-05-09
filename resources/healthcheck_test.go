@@ -56,9 +56,9 @@ func TestHappyHealthCheckWithoutProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":true`, "Consumer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":true`, "Consumer healthcheck should be happy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":true`, "Native writer healthcheck should be happy")
-	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":`, "Producer healthcheck should not appear")
+	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":`, "Producer healthcheck should not appear")
 }
 
 func TestHappyHealthCheckWithProducer(t *testing.T) {
@@ -81,9 +81,9 @@ func TestHappyHealthCheckWithProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":true`, "Consumer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":true`, "Consumer healthcheck should be happy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":true`, "Native writer healthcheck should be happy")
-	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":true`, "Producer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":true`, "Producer healthcheck should be happy")
 }
 
 func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
@@ -103,9 +103,9 @@ func TestUnhappyConsumerHealthCheckWithoutProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":false`, "Consumer healthcheck should be unhappy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":false`, "Consumer healthcheck should be unhappy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":true`, "Native writer healthcheck should be happy")
-	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":`, "Producer healthcheck should not appear")
+	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":`, "Producer healthcheck should not appear")
 }
 
 func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
@@ -128,9 +128,9 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":false`, "Consumer healthcheck should be unhappy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":false`, "Consumer healthcheck should be unhappy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":true`, "Native writer healthcheck should be happy")
-	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":true`, "Producer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":true`, "Producer healthcheck should be happy")
 }
 
 func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
@@ -150,9 +150,9 @@ func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":true`, "Consumer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":true`, "Consumer healthcheck should be happy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":false`, "Native writer healthcheck should be unhappy")
-	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":`, "Producer healthcheck should not appear")
+	assert.NotContains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":`, "Producer healthcheck should not appear")
 }
 
 func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
@@ -175,9 +175,9 @@ func TestUnhappyNativeWriterHealthCheckWithProducer(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":true`, "Consumer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":true`, "Consumer healthcheck should be happy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":false`, "Native writer healthcheck should be unhappy")
-	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":true`, "Producer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":true`, "Producer healthcheck should be happy")
 }
 
 func TestUnhappyProducerHealthCheck(t *testing.T) {
@@ -200,9 +200,9 @@ func TestUnhappyProducerHealthCheck(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
 
-	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueProxyReachable","ok":true`, "Consumer healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"ConsumerQueueReachable","ok":true`, "Consumer healthcheck should be happy")
 	assert.Contains(t, w.Body.String(), `"name":"NativeWriterReachable","ok":true`, "Native writer healthcheck should be happy")
-	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueProxyReachable","ok":false`, "Producer healthcheck should be unhappy")
+	assert.Contains(t, w.Body.String(), `"name":"ProducerQueueReachable","ok":false`, "Producer healthcheck should be unhappy")
 }
 
 func TestHappyGTGCheckWithoutProducer(t *testing.T) {
