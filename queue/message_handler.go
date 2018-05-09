@@ -4,15 +4,14 @@ import (
 	"fmt"
 
 	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/native"
 )
 
 // MessageHandler handles messages consumed from a queue
 type MessageHandler struct {
 	writer      native.Writer
-	producer    producer.MessageProducer
+	producer    kafka.Producer
 	forwards    bool
 	contentType string
 }
@@ -23,7 +22,7 @@ func NewMessageHandler(w native.Writer, contentType string) *MessageHandler {
 }
 
 // HandleMessage implements the strategy for handling message from a queue
-func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
+func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 	pubEvent := publicationEvent{msg}
 
 	writerMsg, err := pubEvent.nativeMessage()
@@ -31,7 +30,7 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithError(err).
 			Error("Error unmarshalling content body from publication event. Ignoring message.")
-		return
+		return err
 	}
 
 	collection, err := mh.writer.GetCollectionByOriginID(pubEvent.originSystemID())
@@ -39,7 +38,7 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithValidFlag(false).
 			Warn(fmt.Sprintf("Skipping content because of not whitelisted Origin-System-Id: %s", pubEvent.originSystemID()))
-		return
+		return err
 	}
 
 	contentUUID, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
@@ -47,27 +46,29 @@ func (mh *MessageHandler) HandleMessage(msg consumer.Message) {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithError(writerErr).
 			Error("Failed to write native content")
-		return
+		return err
 	}
 
 	if mh.forwards {
 		logger.NewEntry(pubEvent.transactionID()).Info("Forwarding consumed message to different queue")
-		forwardErr := mh.producer.SendMessage("", pubEvent.producerMsg())
+		forwardErr := mh.producer.SendMessage(pubEvent.producerMsg())
 		if forwardErr != nil {
 			logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 				WithUUID(contentUUID).
 				WithError(forwardErr).
 				Error("Failed to forward consumed message to a different queue")
-			return
+			return forwardErr
 		}
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithUUID(contentUUID).
 			Info("Successfully ingested")
 	}
+
+	return nil
 }
 
 // ForwardTo sets up the message producer to forward messages after writing in the native store
-func (mh *MessageHandler) ForwardTo(p producer.MessageProducer) {
+func (mh *MessageHandler) ForwardTo(p kafka.Producer) {
 	mh.producer = p
 	mh.forwards = true
 }

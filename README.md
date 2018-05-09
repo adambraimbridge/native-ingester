@@ -8,12 +8,12 @@ Native ingester implements the following functionality:
 1. Optionally, it forwards consumed messages to a different queue.
 
 ## Installation & running locally
+[dep](https://github.com/golang/dep/) is a pre-requisite.
 Installation:
 ```
-go get -u github.com/kardianos/govendor
 go get github.com/Financial-Times/native-ingester
 cd $GOPATH/src/github.com/Financial-Times/native-ingester
-govendor sync
+dep ensure -vendor-only
 go test ./...
 go install
 
@@ -21,14 +21,11 @@ go install
 Run it locally:
 ```
 $GOPATH/bin/native-ingester
-    --read-queue-addresses={source-kafka-proxy-address}
+    --read-queue-addresses={source-zookeeper-address}
     --read-queue-group={topic-group}
     --read-queue-topic={source-topic}
-    --read-queue-host-heade={source-kafka-proxy-host-header}
-    --source-concurrent-processing='true'
     --source-uuid-field='["uuid", "post.uuid", "data.uuidv3"]'
     --native-writer-address={native-writer-address}
-    --native-writer-host-header={native-writer-host-header}
 ```
 List all the possible options:
 ```
@@ -39,18 +36,17 @@ Usage: native-ingester [OPTIONS]
 A service to ingest native content of any type and persist it in the native store, then, if required forwards the message to a new message queue
 
 Options:
-  --read-queue-addresses=[]                     Addresses to connect to the consumer queue (URLs). ($Q_READ_ADDR)
+  --port="8080"                                 Port to listen on ($PORT)
+  --read-queue-addresses=[]                     Zookeeper addresses (host:port) to connect to the consumer queue. ($Q_READ_ADDR)
   --read-queue-group=""                         Group used to read the messages from the queue. ($Q_READ_GROUP)
   --read-queue-topic=""                         The topic to read the messages from. ($Q_READ_TOPIC)
-  --read-queue-host-header="kafka"              The host header for the queue to read the messages from. ($Q_READ_HOST_HEADER)
-  --read-queue-concurrent-processing=false      Whether the consumer uses concurrent processing for the messages ($Q_READ_CONCURRENT_PROCESSING)
-  --native-writer-address=""                    Address of service that writes persistently the native content ($NATIVE_RW_ADDRESS)
-  --native-writer-collections-by-origins="[]"   Map in a JSON-like format. originId referring the collection that the content has to be persisted in. e.g. [{"http://cmdb.ft.com/systems/methode-web-pub":"methode"}] ($NATIVE_RW_COLLECTIONS_BY_ORIGINS)
-  --native-writer-host-header="nativerw"        coco-specific header needed to reach the destination address ($NATIVE_RW_HOST_HEADER)
+  --native-writer-address=""                    Address (URL) of service that writes persistently the native content ($NATIVE_RW_ADDRESS)
+  --native-writer-collections-by-origins="{}"   Mapping from originId (URI) to native collection name, in JSON format. e.g. {"http://cmdb.ft.com/systems/methode-web-pub":"methode"} ($NATIVE_RW_COLLECTIONS_BY_ORIGINS)
   --content-uuid-fields=[]                      List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3 ($NATIVE_CONTENT_UUID_FIELDS)
-  --write-queue-address=""                      Address to connect to the producer queue (URL). ($Q_WRITE_ADDR)
+  --write-queue-address=""                      Kafka address (host:port) to connect to the producer queue. ($Q_WRITE_ADDR)
   --write-topic=""                              The topic to write the messages to. ($Q_WRITE_TOPIC)
-  --write-queue-host-header="kafka"             The host header for the queue to write the messages to. ($Q_WRITE_HOST_HEADER)
+  --content-type="Content"                      The type of the content (for logging purposes, e.g. "Content" or "Annotations") the application is able to handle. ($CONTENT_TYPE)
+  --appName="native-ingester"                   The name of the application ($APP_NAME)
 ```
 
 ## Admin endpoints
