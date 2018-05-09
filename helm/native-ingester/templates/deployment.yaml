@@ -39,7 +39,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: global-config
-              key: kafka.proxy.url.with.protocol
+              key: zookeeper.url
         - name: Q_READ_GROUP
           value: {{ .Values.env.QUEUE_READ_GROUP }}
         - name: Q_READ_TOPIC
@@ -56,7 +56,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: global-config
-              key: kafka.proxy.url.with.protocol
+              key: kafka.url
         - name: Q_WRITE_TOPIC
           value: {{ .Values.env.QUEUE_WRITE_TOPIC }}
         ports: 
