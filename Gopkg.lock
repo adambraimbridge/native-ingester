@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/Financial-Times/kafka-client-go"
   packages = ["kafka"]
-  revision = "b8bc1f9a00df60e27fbf404a42f5f624336cee59"
-  version = "0.8.0"
+  revision = "1efec5b2b8b8916387cec77f61c6d8fa784a6bc4"
+  version = "0.8.1"
 
 [[projects]]
   name = "github.com/Financial-Times/service-status-go"
@@ -141,7 +141,8 @@
     ".",
     "hooks/test"
   ]
-  revision = "89742aefa4b206dcf400792f3bd35b542998eb3b"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   name = "github.com/stretchr/objx"
@@ -185,6 +186,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "63ec378425e81005a4a949a1705c57447b606ed4df63cd3e5cabfb473e15ba00"
+  inputs-digest = "53ad8d25a339d6a7f4de55b31427d1e516a32eb10f1f4cf9ddf2b37c61757ed2"
   solver-name = "gps-cdcl"
   solver-version = 1
