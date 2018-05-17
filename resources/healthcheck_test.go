@@ -17,7 +17,7 @@ func TestNewHealthCheckWithoutProducer(t *testing.T) {
 
 	c, _ := kafka.NewConsumer(kafka.Config{"localhost:2181", "test", []string{"testTopic"}, nil, nil})
 	nw := new(mocks.WriterMock)
-	hc := NewHealthCheck(c,nil, nw)
+	hc := NewHealthCheck(c, nil, nw)
 
 	assert.Nil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
@@ -114,7 +114,7 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(mocks.ProducerMock)
-	p.On("ConnectivityCheck").Return( nil)
+	p.On("ConnectivityCheck").Return(nil)
 	hc := HealthCheck{
 		consumer: c,
 		producer: p,
@@ -135,7 +135,7 @@ func TestUnhappyConsumerHealthCheckWithProducer(t *testing.T) {
 
 func TestUnhappyNativeWriterHealthCheckWithoutProducer(t *testing.T) {
 	c := new(mocks.ConsumerMock)
-	c.On("ConnectivityCheck").Return( nil)
+	c.On("ConnectivityCheck").Return(nil)
 	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm an unhappy writer", errors.New("Oh, my God, they killed Kenny!"))
 	hc := HealthCheck{
@@ -223,7 +223,7 @@ func TestHappyGTGCheckWithoutProducer(t *testing.T) {
 
 func TestHappyGTGCheckWithProducer(t *testing.T) {
 	c := new(mocks.ConsumerMock)
-	c.On("ConnectivityCheck").Return( nil)
+	c.On("ConnectivityCheck").Return(nil)
 	nw := new(mocks.WriterMock)
 	nw.On("ConnectivityCheck").Return("I'm a happy writer", nil)
 	p := new(mocks.ProducerMock)

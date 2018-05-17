@@ -15,6 +15,7 @@ import (
 )
 
 const nativeHashHeader = "X-Native-Hash"
+const contentTypeHeader = "Content-Type"
 const transactionIDHeader = "X-Request-Id"
 
 // Writer provides the functionalities to write in the native store
@@ -78,10 +79,17 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 		return contentUUID, err
 	}
 
-	request.Header.Set("Content-Type", "application/json")
-
 	for header, value := range msg.headers {
 		request.Header.Set(header, value)
+	}
+
+	if request.Header.Get(contentTypeHeader) == "" {
+		logger.NewEntry(msg.transactionID()).
+			WithUUID(contentUUID).
+			Warn("Native-save request does not have content-type header, defaulting to application/json.")
+
+		request.Header.Set("Content-Type", "application/json")
+
 	}
 
 	response, err := nw.httpClient.Do(request)
@@ -162,6 +170,11 @@ func NewNativeMessage(contentBody string, timestamp string, transactionID string
 //AddHashHeader adds the hash of the native content as a header
 func (msg *NativeMessage) AddHashHeader(hash string) {
 	msg.headers[nativeHashHeader] = hash
+}
+
+//AddContentTypeHeader adds the content type of the native content as a header
+func (msg *NativeMessage) AddContentTypeHeader(hash string) {
+	msg.headers[contentTypeHeader] = hash
 }
 
 func (msg *NativeMessage) transactionID() string {

@@ -38,6 +38,11 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 		msg.AddHashHeader(nativeHash)
 	}
 
+	contentType, found := pe.Headers["Content-Type"]
+	if found {
+		msg.AddContentTypeHeader(contentType)
+	}
+
 	return msg, nil
 }
 
