@@ -25,6 +25,8 @@ func NewMessageHandler(w native.Writer, contentType string) *MessageHandler {
 func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 	pubEvent := publicationEvent{msg}
 
+	logger.NewEntry(pubEvent.transactionID()).WithField("Content-Type", pubEvent.contentType()).Infof("Handling new message with headers: %v", pubEvent.Headers)
+
 	writerMsg, err := pubEvent.nativeMessage()
 	if err != nil {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).

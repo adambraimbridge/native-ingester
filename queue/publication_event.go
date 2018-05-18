@@ -6,6 +6,7 @@ import (
 
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/native"
+	"github.com/Financial-Times/go-logger"
 )
 
 type publicationEvent struct {
@@ -18,6 +19,10 @@ func (pe *publicationEvent) transactionID() string {
 
 func (pe *publicationEvent) originSystemID() string {
 	return strings.TrimSpace(pe.Headers["Origin-System-Id"])
+}
+
+func (pe *publicationEvent) contentType() string {
+	return strings.TrimSpace(pe.Headers["Content-Type"])
 }
 
 func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
@@ -42,6 +47,8 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 	if found {
 		msg.AddContentTypeHeader(contentType)
 	}
+
+	logger.NewEntry(pe.transactionID()).Infof("Constructed new NativeMessage with content-type: ", msg.ContentType())
 
 	return msg, nil
 }

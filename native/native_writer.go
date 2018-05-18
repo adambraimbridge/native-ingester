@@ -61,21 +61,21 @@ func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error)
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
-		logger.NewEntry(msg.transactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
+		logger.NewEntry(msg.TransactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
 		return contentUUID, err
 	}
-	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
+	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
-		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
+		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
 		return contentUUID, err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
 	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
-		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, err
 	}
 
@@ -84,7 +84,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	}
 
 	if request.Header.Get(contentTypeHeader) == "" {
-		logger.NewEntry(msg.transactionID()).
+		logger.NewEntry(msg.TransactionID()).
 			WithUUID(contentUUID).
 			Warn("Native-save request does not have content-type header, defaulting to application/json.")
 
@@ -95,19 +95,19 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
-		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
+		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
 		return contentUUID, err
 	}
-	defer properClose(msg.transactionID(), response)
+	defer properClose(msg.TransactionID(), response)
 
 	if isNot2XXStatusCode(response.StatusCode) {
 		errMsg := "Native writer returned non-200 code"
 		err := errors.New(errMsg)
-		logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
+		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
 		return contentUUID, err
 	}
 
-	logger.NewEntry(msg.transactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
+	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
 	return contentUUID, nil
 }
 
@@ -177,6 +177,10 @@ func (msg *NativeMessage) AddContentTypeHeader(hash string) {
 	msg.headers[contentTypeHeader] = hash
 }
 
-func (msg *NativeMessage) transactionID() string {
+func (msg *NativeMessage) TransactionID() string {
 	return msg.headers[transactionIDHeader]
+}
+
+func (msg *NativeMessage) ContentType() string {
+	return msg.headers[contentTypeHeader]
 }

@@ -259,7 +259,7 @@ func TestBuildNativeMessageSuccess(t *testing.T) {
 	assert.Equal(t, msg.body["lastModified"], aTimestamp, "The body should contain the additiona timestamp")
 	assert.Equal(t, msg.body["publishReference"], publishRef, "The body should contain the publish reference")
 	assert.Equal(t, msg.headers[nativeHashHeader], aHash, "The message should contain the hash")
-	assert.Equal(t, msg.transactionID(), publishRef, "The message should contain the publish reference")
+	assert.Equal(t, msg.TransactionID(), publishRef, "The message should contain the publish reference")
 }
 
 func TestBuildNativeMessageFailure(t *testing.T) {
