@@ -59,4 +59,4 @@
 
 [[constraint]]
   name = "github.com/Financial-Times/kafka-client-go"
-  version = "0.8.1"
+  version = "0.8.2"
