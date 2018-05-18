@@ -20,7 +20,7 @@ func (p *ProducerMock) SendMessage(msg kafka.FTMessage) error {
 	return args.Error(0)
 }
 
-func (p *ProducerMock) 	Shutdown() {
+func (p *ProducerMock) Shutdown() {
 	p.Called()
 }
 

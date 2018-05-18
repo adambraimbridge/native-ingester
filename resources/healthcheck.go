@@ -62,12 +62,12 @@ func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 	}
 }
 
-func check(fn func() error) func() (string,error) {
-	return func() (string,error) {
+func check(fn func() error) func() (string, error) {
+	return func() (string, error) {
 		msg := "OK"
-		err := fn();
+		err := fn()
 		if err != nil {
-			msg = err.Error();
+			msg = err.Error()
 		}
 
 		return msg, err
@@ -120,7 +120,7 @@ func gtgCheck(handler func() error) gtg.Status {
 	return gtg.Status{GoodToGo: true}
 }
 
-func writerGtgCheck(handler func() (string,error)) gtg.Status {
+func writerGtgCheck(handler func() (string, error)) gtg.Status {
 	if _, err := handler(); err != nil {
 		return gtg.Status{GoodToGo: false, Message: err.Error()}
 	}

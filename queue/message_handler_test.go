@@ -18,6 +18,7 @@ const (
 )
 
 var goodMsgHeaders = map[string]string{
+	"Content-Type":      "application/json; version=1.0",
 	"X-Request-Id":      "tid_test",
 	"Message-Timestamp": "2017-02-16T12:56:16Z",
 	"Origin-System-Id":  methodeOriginSystemID,
