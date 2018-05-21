@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/Financial-Times/kafka-client-go"
   packages = ["kafka"]
-  revision = "a4e15d64d165856d4dce4e08cb2e84cd119aa3dc"
-  version = "0.8.2"
+  revision = "5aa30a3275174d54f39f7a197e08015955b6b490"
+  version = "0.8.3"
 
 [[projects]]
   name = "github.com/Financial-Times/service-status-go"
@@ -186,6 +186,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d954d65458c0e0bcb4a8aa04844bb6e9b4086cb5c6073b3f16687a11801573b7"
+  inputs-digest = "e9353aae2700ca86e94db012e3a03716bedfd272c54c6a00cf65cc067a979e8d"
   solver-name = "gps-cdcl"
   solver-version = 1
