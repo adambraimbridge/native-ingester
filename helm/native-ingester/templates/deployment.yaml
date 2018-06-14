@@ -59,6 +59,21 @@ spec:
               key: kafka.url
         - name: Q_WRITE_TOPIC
           value: {{ .Values.env.QUEUE_WRITE_TOPIC }}
+        - name: MQ_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: global-secrets
+              key: mq.endpoint
+        - name: MQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: global-secrets
+              key: mq.user
+        - name: MQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: global-secrets
+              key: mq.password
         ports: 
         - containerPort: 8080 
         livenessProbe: 

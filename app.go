@@ -16,6 +16,7 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	"github.com/go-stomp/stomp"
 )
 
 func main() {
@@ -93,6 +94,25 @@ func main() {
 		EnvVar: "APP_NAME",
 	})
 
+	mqUser := app.String(cli.StringOpt{
+		Name:   "mqUser",
+		Value:  "",
+		Desc:   "AmazonMQ broker username",
+		EnvVar: "MQ_USER",
+	})
+
+	mqPassword := app.String(cli.StringOpt{
+		Name:   "mqPassword",
+		Value:  "",
+		Desc:   "AmazonMQ broker password",
+		EnvVar: "MQ_PASSWORD",
+	})
+	mqEndpoint := app.String(cli.StringOpt{
+		Name:   "mqEndpoint",
+		Value:  "",
+		Desc:   "AmazonMQ broker STOMP endpoint",
+		EnvVar: "MQ_ENDPOINT",
+	})
 	app.Action = func() {
 		logger.InitDefaultLogger(*appName)
 
@@ -131,7 +151,10 @@ func main() {
 		}
 
 		go enableHealthCheck(*port, messageConsumer, messageProducer, writer)
+		activeMQStop := make(chan bool)
+		go startActiveMQMessageConsumption(*mqUser, *mqPassword, *mqEndpoint, *readQueueTopic, activeMQStop)
 		startMessageConsumption(messageConsumer, mh.HandleMessage)
+		activeMQStop <- true
 	}
 
 	err := app.Run(os.Args)
@@ -163,4 +186,31 @@ func startMessageConsumption(messageConsumer kafka.Consumer, mh func(message kaf
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 	messageConsumer.Shutdown()
+}
+
+func startActiveMQMessageConsumption(user, password, endpoint, topic string, stop chan bool) {
+	if len(endpoint) == 0 {
+		logger.Infof(nil, "[mq] ActiveMQ Consumer not configured")
+		return
+	}
+
+	conn, err := stomp.Dial("tcp", endpoint, []func(*stomp.Conn) error{stomp.ConnOpt.Login(user, password)}...)
+	if err != nil {
+		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s] because [%v].", endpoint, err)
+		return
+	}
+
+	sub, err := conn.Subscribe(topic, stomp.AckAuto)
+	if err != nil {
+		logger.Errorf(nil, err, "[mq] Cannot subscribe  to ActiveMQ topic [%s] because [%v].", topic, err)
+		return
+	}
+
+	select {
+	case msg := <-sub.C:
+		logger.Infof(nil, "[mq] Got message from ActiveMQ with transactionID [%s]", msg.Body)
+	case <-stop:
+		logger.Infof(nil, "[mq] Stopping ActiveMQ consumer")
+	}
+
 }

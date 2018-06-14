@@ -60,6 +60,15 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/go-stomp/stomp"
+  packages = [
+    ".",
+    "frame"
+  ]
+  revision = "ba860900ef3307ecfe85ca14bc4838f24cfc7126"
+  version = "v2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/snappy"
   packages = ["."]
@@ -186,6 +195,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e9353aae2700ca86e94db012e3a03716bedfd272c54c6a00cf65cc067a979e8d"
+  inputs-digest = "4934ce84694151f5669a57af7b90046edd3e3128ab266896fa53fdd7405dbe60"
   solver-name = "gps-cdcl"
   solver-version = 1
