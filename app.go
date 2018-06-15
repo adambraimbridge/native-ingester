@@ -205,6 +205,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 			stomp.ConnOpt.AcceptVersion(stomp.V12),
 			stomp.ConnOpt.AcceptVersion(stomp.V11),
 			stomp.ConnOpt.AcceptVersion(stomp.V10),
+			stomp.ConnOpt.Host("/"),
 		)
 		if err != nil {
 			logger.Errorf(nil, err, "[mq] Cannot connect (retry) to ActiveMQ server [%s].", endpoint)
