@@ -196,21 +196,12 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 
 	conn, err := stomp.Dial("tcp",
 		endpoint,
-		stomp.ConnOpt.Login(user, password))
+		stomp.ConnOpt.Login(user, password),
+		stomp.ConnOpt.Host("/"),
+	)
 	if err != nil {
-		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s], retrying", endpoint)
-		conn, err = stomp.Dial("tcp",
-			endpoint,
-			stomp.ConnOpt.Login(user, password),
-			stomp.ConnOpt.AcceptVersion(stomp.V12),
-			stomp.ConnOpt.AcceptVersion(stomp.V11),
-			stomp.ConnOpt.AcceptVersion(stomp.V10),
-			stomp.ConnOpt.Host("/"),
-		)
-		if err != nil {
-			logger.Errorf(nil, err, "[mq] Cannot connect (retry) to ActiveMQ server [%s].", endpoint)
-			return
-		}
+		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s].", endpoint)
+		return
 	}
 
 	sub, err := conn.Subscribe(topic, stomp.AckAuto)
@@ -219,9 +210,11 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		return
 	}
 
+	logger.Infof(nil, "[mq] Waiting for message from ActiveMQ topic [%s]", topic)
+
 	select {
 	case msg := <-sub.C:
-		logger.Infof(nil, "[mq] Got message from ActiveMQ with transactionID [%s]", msg.Body)
+		logger.Infof(nil, "[mq] Got message from ActiveMQ with body [%s]", msg.Body)
 	case <-stop:
 		logger.Infof(nil, "[mq] Stopping ActiveMQ consumer")
 	}
