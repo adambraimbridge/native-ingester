@@ -198,20 +198,18 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		endpoint,
 		stomp.ConnOpt.Login(user, password))
 	if err != nil {
-		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s] because [%v].", endpoint, err.Error())
-		return
-	}
-
-	conn, err = stomp.Dial("tcp",
-		endpoint,
-		stomp.ConnOpt.Login(user, password),
-		stomp.ConnOpt.AcceptVersion(stomp.V12),
-		stomp.ConnOpt.AcceptVersion(stomp.V11),
-		stomp.ConnOpt.AcceptVersion(stomp.V10),
-	)
-	if err != nil {
-		logger.Errorf(nil, err, "[mq] Cannot connect (retry) to ActiveMQ server [%s] because [%v].", endpoint, err.Error())
-		return
+		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s], retrying", endpoint)
+		conn, err = stomp.Dial("tcp",
+			endpoint,
+			stomp.ConnOpt.Login(user, password),
+			stomp.ConnOpt.AcceptVersion(stomp.V12),
+			stomp.ConnOpt.AcceptVersion(stomp.V11),
+			stomp.ConnOpt.AcceptVersion(stomp.V10),
+		)
+		if err != nil {
+			logger.Errorf(nil, err, "[mq] Cannot connect (retry) to ActiveMQ server [%s].", endpoint)
+			return
+		}
 	}
 
 	sub, err := conn.Subscribe(topic, stomp.AckAuto)
