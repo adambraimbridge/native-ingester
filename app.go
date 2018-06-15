@@ -17,6 +17,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/go-stomp/stomp"
+	"strings"
 )
 
 func main() {
@@ -197,7 +198,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 	conn, err := stomp.Dial("tcp",
 		endpoint,
 		stomp.ConnOpt.Login(user, password),
-		stomp.ConnOpt.Host("/"),
+		stomp.ConnOpt.Host(strings.Split(endpoint, ":")[0]),
 	)
 	if err != nil {
 		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s].", endpoint)
