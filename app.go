@@ -201,7 +201,18 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		stomp.ConnOpt.Host(strings.Split(endpoint, ":")[0]),
 	)
 	if err != nil {
-		logger.Errorf(nil, err, "[mq] Cannot connect to ActiveMQ server [%s].", endpoint)
+		logger.Errorf(nil, err, "[mq1] Cannot connect to ActiveMQ server [%s].", endpoint)
+
+		conn, err = stomp.Dial("tcp",
+			endpoint,
+			stomp.ConnOpt.Login(user, password),
+			stomp.ConnOpt.Host("/"),
+		)
+		if err != nil {
+			logger.Errorf(nil, err, "[mq2] Cannot connect to ActiveMQ server [%s].", endpoint)
+			return
+		}
+
 		return
 	}
 
