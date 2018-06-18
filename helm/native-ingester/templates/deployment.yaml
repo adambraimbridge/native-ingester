@@ -63,7 +63,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: global-secrets
-              key: mq.stomp.endpoint
+              key: mq.amqp.endpoint
         - name: MQ_USER
           valueFrom:
             secretKeyRef:
