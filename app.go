@@ -18,7 +18,7 @@ import (
 	"github.com/jawher/mow.cli"
 	"github.com/go-stomp/stomp"
 	"strings"
-	"github.com/golang/go/src/pkg/fmt"
+	"fmt"
 )
 
 func main() {
@@ -197,8 +197,8 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 	}
 
 	host := strings.Split(endpoint, ":")[0]
-	fmt.Println("[mq] Endpoint: %s", endpoint)
-	fmt.Println("[mq] Host: %s", host)
+	fmt.Printf("[mq] Endpoint: %s \n", endpoint)
+	fmt.Printf("[mq] Host: %s \n", host)
 
 	conn, err := stomp.Dial("tcp",
 		endpoint,
@@ -207,7 +207,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 	)
 
 	if err != nil {
-		fmt.Println("[mq1] Cannot connect to ActiveMQ server [%s] : [%s].", endpoint, err.Error())
+		fmt.Printf("[mq1] Cannot connect to ActiveMQ server [%s] : [%s]. \n", endpoint, err.Error())
 
 		conn, err = stomp.Dial("tcp",
 			endpoint,
@@ -215,7 +215,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 			stomp.ConnOpt.Host("/"),
 		)
 		if err != nil {
-			fmt.Println("[mq2] Cannot connect to ActiveMQ server [%s] : [%s].", endpoint, err.Error())
+			fmt.Printf("[mq2] Cannot connect to ActiveMQ server [%s] : [%s]. \n", endpoint, err.Error())
 			return
 		}
 
