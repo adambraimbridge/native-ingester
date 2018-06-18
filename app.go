@@ -16,8 +16,9 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"github.com/go-stomp/stomp"
-	"strings"
+
+	"pack.ag/amqp"
+	"context"
 )
 
 func main() {
@@ -195,40 +196,51 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		return
 	}
 
-	conn, err := stomp.Dial("tcp",
-		endpoint,
-		stomp.ConnOpt.Login(user, password),
-		stomp.ConnOpt.Host(strings.Split(endpoint, ":")[0]),
-	)
+	// Create client
+	client, err := amqp.Dial(endpoint, amqp.ConnSASLPlain(user, password))
 	if err != nil {
-		logger.Errorf(nil, err, "[mq1] Cannot connect to ActiveMQ server [%s].", endpoint)
+		logger.Errorf(nil, err, "Error dialing AMQP server.")
+		return
+	}
+	defer client.Close()
 
-		conn, err = stomp.Dial("tcp",
-			endpoint,
-			stomp.ConnOpt.Login(user, password),
-			stomp.ConnOpt.Host("/"),
-		)
-		if err != nil {
-			logger.Errorf(nil, err, "[mq2] Cannot connect to ActiveMQ server [%s].", endpoint)
-			return
-		}
-
+	// Open a session
+	session, err := client.NewSession()
+	if err != nil {
+		logger.Errorf(nil, err, "Error creating AMQP session.")
 		return
 	}
 
-	sub, err := conn.Subscribe(topic, stomp.AckAuto)
-	if err != nil {
-		logger.Errorf(nil, err, "[mq] Cannot subscribe  to ActiveMQ topic [%s] because [%v].", topic, err)
-		return
-	}
+	ctx := context.Background()
 
 	logger.Infof(nil, "[mq] Waiting for message from ActiveMQ topic [%s]", topic)
 
-	select {
-	case msg := <-sub.C:
-		logger.Infof(nil, "[mq] Got message from ActiveMQ with body [%s]", msg.Body)
-	case <-stop:
-		logger.Infof(nil, "[mq] Stopping ActiveMQ consumer")
+	// Create a receiver
+	receiver, err := session.NewReceiver(
+		amqp.LinkSourceAddress("/"+topic),
+		amqp.LinkCredit(10),
+	)
+	if err != nil {
+		logger.Errorf(nil, err, "Error creating receiver link.")
+		return
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+		receiver.Close(ctx)
+		cancel()
+	}()
+
+	for {
+		// Receive next message
+		msg, err := receiver.Receive(ctx)
+		if err != nil {
+			logger.Errorf(nil, err, "Reading message from AMQP:", err)
+			return
+		}
+
+		// Accept message
+		msg.Accept()
+		logger.Infof(nil, "Message received: %s\n", msg.GetData())
 	}
 
 }

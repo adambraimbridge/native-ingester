@@ -54,8 +54,8 @@
   version = "1.1.4"
 
 [[constraint]]
-  name = "github.com/go-stomp/stomp"
-  version = "v2.0"
+  name = "pack.ag/amqp"
+  version = "v0.6.0"
 
 [prune]
   go-tests = true

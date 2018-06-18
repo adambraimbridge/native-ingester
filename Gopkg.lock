@@ -60,15 +60,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  name = "github.com/go-stomp/stomp"
-  packages = [
-    ".",
-    "frame"
-  ]
-  revision = "ba860900ef3307ecfe85ca14bc4838f24cfc7126"
-  version = "v2.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/golang/snappy"
   packages = ["."]
@@ -192,9 +183,18 @@
   ]
   revision = "07c182904dbd53199946ba614a412c61d3c548f5"
 
+[[projects]]
+  name = "pack.ag/amqp"
+  packages = [
+    ".",
+    "internal/testconn"
+  ]
+  revision = "404f5d173b9f27217670fc13e92e97ec11ef1af6"
+  version = "v0.6.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4934ce84694151f5669a57af7b90046edd3e3128ab266896fa53fdd7405dbe60"
+  inputs-digest = "a7070ea6a37733b05a2c63c53d211b7b21bac4652fcb46d7affa4340d7700268"
   solver-name = "gps-cdcl"
   solver-version = 1
