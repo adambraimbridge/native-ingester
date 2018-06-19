@@ -19,6 +19,7 @@ import (
 
 	"context"
 
+	"github.com/golang/go/src/pkg/fmt"
 	"pack.ag/amqp"
 )
 
@@ -222,7 +223,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		amqp.LinkCredit(10),
 	)
 	if err != nil {
-		logger.Errorf(nil, err, "Error creating receiver link.")
+		logger.Errorf(nil, err, "[mq] Error creating receiver link.")
 		return
 	}
 	defer func() {
@@ -235,13 +236,15 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 		// Receive next message
 		msg, err := receiver.Receive(ctx)
 		if err != nil {
-			logger.Errorf(nil, err, "Reading message from AMQP:", err)
+			logger.Errorf(nil, err, "[mq] Reading message from AMQP:", err)
 			return
 		}
 
 		// Accept message
 		msg.Accept()
-		logger.Infof(nil, "Message received: %s\n", msg.GetData())
+		fmt.Printf("[mq] Message received: %v\n", msg)
 	}
+
+	logger.Infof(nil, "[mq] Finished reading messages")
 
 }
