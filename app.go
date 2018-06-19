@@ -242,7 +242,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 
 		// Accept message
 		msg.Accept()
-		fmt.Printf("[mq] Message received: %v\n", msg)
+		fmt.Printf("[mq] Message received\n")
 	}
 
 	logger.Infof(nil, "[mq] Finished reading messages")
