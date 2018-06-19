@@ -17,8 +17,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 
-	"pack.ag/amqp"
 	"context"
+
+	"pack.ag/amqp"
 )
 
 func main() {
@@ -217,7 +218,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 
 	// Create a receiver
 	receiver, err := session.NewReceiver(
-		amqp.LinkSourceAddress("/"+topic),
+		amqp.LinkSourceAddress(topic),
 		amqp.LinkCredit(10),
 	)
 	if err != nil {
