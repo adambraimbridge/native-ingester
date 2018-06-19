@@ -242,7 +242,7 @@ func startActiveMQMessageConsumption(user, password, endpoint, topic string, sto
 
 		// Accept message
 		msg.Accept()
-		fmt.Printf("[mq] Message received: %v, %v \n", len(msg.Data))
+		fmt.Printf("[mq] Message received: %v, %v \n", len(msg.GetData()))
 
 	}
 
