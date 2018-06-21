@@ -177,7 +177,10 @@ func startMessageConsumption(brokerAddress []string, topic string) {
 	for {
 		select {
 		case msg := <-partitionConsumer.Messages():
-			log.Printf("Consumed message offset %d\n", msg.Offset)
+			log.Printf("Message offset %d\n", msg.Offset)
+			log.Printf("Message key %v\n", msg.Key)
+			log.Printf("Message value %v\n", msg.Value)
+
 		case <-ch:
 			partitionConsumer.Close()
 			consumer.Close()
