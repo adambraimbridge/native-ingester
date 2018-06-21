@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/Shopify/sarama"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 )
@@ -131,7 +133,7 @@ func main() {
 		}
 
 		go enableHealthCheck(*port, messageConsumer, messageProducer, writer)
-		startMessageConsumption(messageConsumer, mh.HandleMessage)
+		startMessageConsumption(*readQueueAddresses, *readQueueTopic)
 	}
 
 	err := app.Run(os.Args)
@@ -156,11 +158,29 @@ func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Prod
 	}
 }
 
-func startMessageConsumption(messageConsumer kafka.Consumer, mh func(message kafka.FTMessage) error) {
-	messageConsumer.StartListening(mh)
+func startMessageConsumption(brokerAddress []string, topic string) {
+
+	consumer, err := sarama.NewConsumer(brokerAddress, nil)
+	if err != nil {
+		log.Printf("Error connecting to broker %v: %s", brokerAddress, err.Error())
+		panic(err)
+	}
+
+	partitionConsumer, err := consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
+	if err != nil {
+		log.Printf("Error consuming messages on topic %v: %s", topic, err.Error())
+		panic(err)
+	}
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	<-ch
-	messageConsumer.Shutdown()
+	for {
+		select {
+		case msg := <-partitionConsumer.Messages():
+			log.Printf("Consumed message offset %d\n", msg.Offset)
+		case <-ch:
+			partitionConsumer.Close()
+			consumer.Close()
+		}
+	}
 }

@@ -36,10 +36,7 @@ spec:
         - name: APP_NAME
           value: {{ .Values.service.name }}
         - name: Q_READ_ADDR
-          valueFrom:
-            configMapKeyRef:
-              name: global-config
-              key: zookeeper.url
+          value: "bootstrap.kafka.svc.cluster.local:9092"
         - name: Q_READ_GROUP
           value: {{ .Values.env.QUEUE_READ_GROUP }}
         - name: Q_READ_TOPIC
@@ -53,10 +50,7 @@ spec:
         - name: NATIVE_RW_COLLECTIONS_BY_ORIGINS
           value: {{ .Values.env.NATIVE_RW_COLLECTIONS_BY_ORIGINS }}
         - name: Q_WRITE_ADDR
-          valueFrom:
-            configMapKeyRef:
-              name: global-config
-              key: kafka.url
+          value: ""
         - name: Q_WRITE_TOPIC
           value: {{ .Values.env.QUEUE_WRITE_TOPIC }}
         ports: 
