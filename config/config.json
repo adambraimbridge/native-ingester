@@ -1,0 +1,10 @@
+{
+    "config": {
+        "http://cmdb.ft.com/systems/methode-web-pub": [
+            {
+				"content_type": ".*",
+                "collection": "methode"
+            }
+        ]
+    }
+}

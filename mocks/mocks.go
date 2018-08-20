@@ -45,8 +45,8 @@ type WriterMock struct {
 	mock.Mock
 }
 
-func (w *WriterMock) GetCollectionByOriginID(originID string) (string, error) {
-	args := w.Called(originID)
+func (w *WriterMock) GetCollection(originID string, contentType string) (string, error) {
+	args := w.Called(originID, contentType)
 	return args.String(0), args.Error(1)
 }
 

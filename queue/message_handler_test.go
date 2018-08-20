@@ -14,11 +14,11 @@ import (
 const (
 	methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
 	methodeCollection     = "methode"
-	contentType           = "anyType"
+	contentType           = "application/json; version=1.0"
 )
 
 var goodMsgHeaders = map[string]string{
-	"Content-Type":      "application/json; version=1.0",
+	"Content-Type":      contentType,
 	"X-Request-Id":      "tid_test",
 	"Message-Timestamp": "2017-02-16T12:56:16Z",
 	"Origin-System-Id":  methodeOriginSystemID,
@@ -40,7 +40,7 @@ func init() {
 
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
+	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
 	p := new(mocks.ProducerMock)
@@ -55,7 +55,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
+	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
 	p := new(mocks.ProducerMock)
@@ -84,7 +84,7 @@ func TestWriteToNativeFailWithBadBodyMessage(t *testing.T) {
 
 func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return("", errors.New("Collection Not Found"))
+	w.On("GetCollection", methodeOriginSystemID, contentType).Return("", errors.New("Collection Not Found"))
 
 	p := new(mocks.ProducerMock)
 
@@ -98,7 +98,7 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 	w := new(mocks.WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
+	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", errors.New("I do not want to write today!"))
 
 	p := new(mocks.ProducerMock)
@@ -114,7 +114,7 @@ func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 func TestForwardFailBecauseOfProducer(t *testing.T) {
 	hook := logger.NewTestHook("native-ingester")
 	w := new(mocks.WriterMock)
-	w.On("GetCollectionByOriginID", methodeOriginSystemID).Return(methodeCollection, nil)
+	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
 	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
 
 	p := new(mocks.ProducerMock)

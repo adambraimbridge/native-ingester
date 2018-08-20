@@ -10,7 +10,7 @@ import (
 	"net/http"
 
 	"github.com/Financial-Times/go-logger"
-
+	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/service-status-go/httphandlers"
 )
 
@@ -20,42 +20,26 @@ const transactionIDHeader = "X-Request-Id"
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
-	GetCollectionByOriginID(originID string) (string, error)
+	GetCollection(originID string, contentType string) (string, error)
 	WriteToCollection(msg NativeMessage, collection string) (string, error)
 	ConnectivityCheck() (string, error)
 }
 
 type nativeWriter struct {
 	address     string
-	collections nativeCollections
+	collections config.Configuration
 	httpClient  http.Client
 	bodyParser  ContentBodyParser
 }
 
 // NewWriter returns a new instance of a native writer
-func NewWriter(address string, collectionsOriginIdsMap map[string]string, parser ContentBodyParser) Writer {
-	collections := newNativeCollections(collectionsOriginIdsMap)
+func NewWriter(address string, collectionsOriginIdsMap config.Configuration, parser ContentBodyParser) Writer {
+	collections := collectionsOriginIdsMap
 	return &nativeWriter{address, collections, http.Client{}, parser}
 }
 
-type nativeCollections struct {
-	collectionsOriginIdsMap map[string]string
-}
-
-func newNativeCollections(collectionsOriginIdsMap map[string]string) nativeCollections {
-	return nativeCollections{collectionsOriginIdsMap}
-}
-
-func (c nativeCollections) getCollectionByOriginID(originID string) (string, error) {
-	collection := c.collectionsOriginIdsMap[originID]
-	if collection == "" {
-		return "", errors.New("Collection not found")
-	}
-	return collection, nil
-}
-
-func (nw *nativeWriter) GetCollectionByOriginID(originID string) (string, error) {
-	return nw.collections.getCollectionByOriginID(originID)
+func (c nativeWriter) GetCollection(originID string, contentType string) (string, error) {
+	return c.collections.GetCollection(originID, contentType)
 }
 
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {

@@ -35,7 +35,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 		return err
 	}
 
-	collection, err := mh.writer.GetCollectionByOriginID(pubEvent.originSystemID())
+	collection, err := mh.writer.GetCollection(pubEvent.originSystemID(), writerMsg.ContentType())
 	if err != nil {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithValidFlag(false).
