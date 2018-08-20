@@ -2,13 +2,13 @@
     "config": {
         "http://cmdb.ft.com/systems/methode-web-pub": [
             {
-				"content_type": 
+				"content_type": ".*",
                 "collection": "methode"
             }
         ],
         "http://cmdb.ft.com/systems/wordpress": [
             {
-                "content_type":
+                "content_type": ".*",
 				"collection": "wordpress"
             }
         ],
@@ -24,13 +24,13 @@
         ],
         "http://cmdb.ft.com/systems/cct": [
             {
-				"content_type":
+				"content_type": ".*",
                 "collection": "spark"
             }
         ],
         "http://cmdb.ft.com/systems/audio": [
             {
-				"content_type":
+				"content_type": ".*",
                 "collection": "audio"
             }
         ]
