@@ -5,6 +5,16 @@
 				"content_type": ".*",
                 "collection": "methode"
             }
-        ]
+        ],
+   "http://cmdb.ft.com/systems/next-video-editor": [
+            {
+                "content_type": "application/json",
+                "collection": "video"
+            },
+            {
+                "content_type": "^(application/)*(vnd.ft-upp-audio\\+json).*$",
+                "collection": "audio"
+            }
+        ]	
     }
 }

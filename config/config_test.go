@@ -35,7 +35,16 @@ func TestReadConfig(t *testing.T) {
 							Collection: "methode",
 						},
 					},
-				}},
+					"http://cmdb.ft.com/systems/next-video-editor": []OriginSystemConfig{
+						{ContentType: "application/json",
+							Collection: "video",
+						},
+						{ContentType: "^(application/)*(vnd.ft-upp-audio\\+json).*$",
+							Collection: "audio",
+						},
+					},
+				},
+			},
 			false},
 	}
 	for _, tt := range tests {
