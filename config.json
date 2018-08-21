@@ -18,20 +18,14 @@
                 "collection": "video"
             },
             {
-                "content_type": "application/vnd.ft-upp-audio+json",
-                "collection": "spark"
+                "content_type": "^(application/)*(vnd.ft-upp-audio\\+json).*$"",
+                "collection": "audio"
             }
         ],
         "http://cmdb.ft.com/systems/cct": [
             {
 				"content_type": ".*",
                 "collection": "spark"
-            }
-        ],
-        "http://cmdb.ft.com/systems/audio": [
-            {
-				"content_type": ".*",
-                "collection": "audio"
             }
         ]
     }
