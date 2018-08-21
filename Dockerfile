@@ -22,8 +22,8 @@ RUN apk --no-cache --virtual .build-dependencies add git curl \
   && curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh \
   && $GOPATH/bin/dep ensure -vendor-only \
   && go build -ldflags="${LDFLAGS}" \
-  && mv ${CONFIG} /${CONFIG} \  
   && mv ${PROJECT} /${PROJECT} \
+  && mv *.json / \  
   && apk del .build-dependencies \
   && rm -rf $GOPATH /var/cache/apk/*
 
