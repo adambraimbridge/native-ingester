@@ -19,7 +19,7 @@
             },
             {
                 "content_type": "^(application/)*(vnd.ft-upp-audio).*$",
-                "collection": "audio"
+                "collection": "spark"
             }
         ],
         "http://cmdb.ft.com/systems/cct": [
