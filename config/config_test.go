@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -21,13 +22,32 @@ func toString(c *Configuration) string {
 func TestReadConfig(t *testing.T) {
 	tests := []struct {
 		name     string
-		confPath string
+		confText string
 		wantC    *Configuration
 		wantErr  bool
 	}{
 		{
 			"Test1",
-			"config.json",
+			`{
+				"config": {
+					"http://cmdb.ft.com/systems/methode-web-pub": [
+						{
+							"content_type": ".*",
+							"collection": "methode"
+						}
+					],
+			   "http://cmdb.ft.com/systems/next-video-editor": [
+						{
+							"content_type": "application/json",
+							"collection": "video"
+						},
+						{
+							"content_type": "^(application/)*(vnd.ft-upp-audio\\+json).*$",
+							"collection": "audio"
+						}
+					]	
+				}
+			}`,
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
 					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
@@ -49,7 +69,7 @@ func TestReadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotC, err := ReadConfig(tt.confPath)
+			gotC, err := ReadConfigFromReader(strings.NewReader(tt.confText))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
