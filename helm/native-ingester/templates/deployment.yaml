@@ -40,6 +40,8 @@ spec:
             configMapKeyRef:
               name: global-config
               key: zookeeper.url
+        - name: CONFIG
+          value: {{ .Values.env.CONFIG }}
         - name: Q_READ_GROUP
           value: {{ .Values.env.QUEUE_READ_GROUP }}
         - name: Q_READ_TOPIC

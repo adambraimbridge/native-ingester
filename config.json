@@ -14,7 +14,7 @@
         ],
         "http://cmdb.ft.com/systems/next-video-editor": [
             {
-                "content_type": "application/json",
+                "content_type": "^(application/json).*$",
                 "collection": "video"
             },
             {

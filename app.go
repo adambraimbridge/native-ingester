@@ -89,7 +89,7 @@ func main() {
 
 	configFile := app.String(cli.StringOpt{
 		Name:   "config",
-		Value:  "config.json",
+		Value:  "",
 		Desc:   "Config file (e.g. config.json)",
 		EnvVar: "CONFIG",
 	})
@@ -110,7 +110,7 @@ func main() {
 
 		var messageProducer kafka.Producer
 		if *writeQueueAddress != "" {
-			messageProducer, err := kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
+			messageProducer, err = kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
 			if err != nil {
 				logger.Errorf(nil, err, "unable to create producer for %v/%v", *writeQueueAddress, *writeQueueTopic)
 			}
