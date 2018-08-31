@@ -19,19 +19,19 @@ type Configuration struct {
 	Config map[string][]OriginSystemConfig
 }
 
-func (c *Configuration) validateConfig() (*Configuration, error) {
+func (c *Configuration) validateConfig() error {
 	for oKey, origCollection := range c.Config {
 		for ocKey, val := range origCollection {
 			if val.ContentType == "" {
-				return nil, errors.New("ContentType value is mandatory")
+				return errors.New("ContentType value is mandatory")
 			}
 			if val.Collection == "" {
-				return nil, errors.New("Collection value is mandatory")
+				return errors.New("Collection value is mandatory")
 			}
 			c.Config[oKey][ocKey].contentTypeRegexp = regexp.MustCompile(val.ContentType)
 		}
 	}
-	return c, nil
+	return nil
 }
 
 func (c *Configuration) GetCollection(originID string, contentType string) (string, error) {
@@ -56,15 +56,15 @@ func ReadConfigFromReader(r io.Reader) (c *Configuration, e error) {
 	if e != nil {
 		return nil, e
 	}
-	return c.validateConfig()
+	return c, c.validateConfig()
 }
 
 // ReadConfig reads config as a json file from the given path
 func ReadConfig(confPath string) (c *Configuration, e error) {
 	file, fErr := os.Open(confPath)
-	defer file.Close()
 	if fErr != nil {
 		return nil, fErr
 	}
+	defer file.Close()
 	return ReadConfigFromReader(file)
 }
