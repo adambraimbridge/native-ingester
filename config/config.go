@@ -23,10 +23,10 @@ func (c *Configuration) validateConfig() error {
 	for oKey, origCollection := range c.Config {
 		for ocKey, val := range origCollection {
 			if val.ContentType == "" {
-				return errors.New("ContentType value is mandatory")
+				return errors.New("contentType value is mandatory")
 			}
 			if val.Collection == "" {
-				return errors.New("Collection value is mandatory")
+				return errors.New("collection value is mandatory")
 			}
 			c.Config[oKey][ocKey].contentTypeRegexp = regexp.MustCompile(val.ContentType)
 		}
@@ -37,22 +37,21 @@ func (c *Configuration) validateConfig() error {
 func (c *Configuration) GetCollection(originID string, contentType string) (string, error) {
 	collection := c.Config[originID]
 	if len(collection) == 0 {
-		return "", errors.New("Origin system not found")
+		return "", errors.New("origin system not found")
 	}
 	for _, val := range collection {
 		if val.contentTypeRegexp.MatchString(contentType) {
 			return val.Collection, nil
 		}
 	}
-	return "", errors.New("Origin system and content type not configured")
+	return "", errors.New("origin system and content type not configured")
 }
 
 // ReadConfigFromReader reads config as a json stream from the given reader
 func ReadConfigFromReader(r io.Reader) (c *Configuration, e error) {
 	c = new(Configuration)
-
 	decoder := json.NewDecoder(r)
-	e = decoder.Decode(c)
+	e = decoder.Decode(&c.Config)
 	if e != nil {
 		return nil, e
 	}

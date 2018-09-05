@@ -30,18 +30,15 @@ const (
 )
 
 var strCollectionsOriginIdsMap = `{
-    "config": {
         "http://cmdb.ft.com/systems/methode-web-pub": [
             {
 				"content_type": "(application/json).*",
                 "collection": "methode"
             }
         ]
-    }
 }`
 
 var audioStrCollectionsOriginIdsMap = `{
-    "config": {
 		"http://cmdb.ft.com/systems/next-video-editor": [
             {
                 "content_type": "^(application/json).*$",
@@ -52,7 +49,6 @@ var audioStrCollectionsOriginIdsMap = `{
                 "collection": "spark"
             }
         ]
-    }
 }`
 var aContentBody = map[string]interface{}{
 	"publishReference": publishRef,
@@ -105,7 +101,7 @@ func TestGetCollectionShort(t *testing.T) {
 	assert.Equal(t, methodeCollection[0], actualCollection, "It should return the methode collection")
 
 	_, err = w.GetCollection("Origin-Id-that-do-not-exist", aContentType)
-	assert.EqualError(t, err, "Origin system not found", "It should return a collection not found error")
+	assert.EqualError(t, err, "origin system not found", "It should return a collection not found error")
 	p.AssertExpectations(t)
 }
 
@@ -154,14 +150,12 @@ func TestGetCollection(t *testing.T) {
 func TestGetAllCollection(t *testing.T) {
 	p := new(ContentBodyParserMock)
 	str := `{
-		"config": {
 			"http://cmdb.ft.com/systems/methode-web-pub": [
 				{
 					"content_type": ".*",
 					"collection": "methode"
 				}
 			]
-		}
 	}`
 	testCollectionsOriginIdsMap, err := getConfig(str)
 	assert.NoError(t, err, "It should not return an error")

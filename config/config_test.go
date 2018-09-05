@@ -50,8 +50,7 @@ func TestValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			errors.New("ContentType value is mandatory"),
-			// TODO: Add test cases.
+			errors.New("contentType value is mandatory"),
 		},
 		{
 			"Empty Collection",
@@ -64,8 +63,7 @@ func TestValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			errors.New("Collection value is mandatory"),
-			// TODO: Add test cases.
+			errors.New("collection value is mandatory"),
 		},
 	}
 	for _, tt := range tests {
@@ -89,8 +87,7 @@ func TestReadConfig(t *testing.T) {
 		{
 			"Test1",
 			`{
-				"config": {
-					"http://cmdb.ft.com/systems/methode-web-pub": [
+				"http://cmdb.ft.com/systems/methode-web-pub": [
 						{
 							"content_type": ".*",
 							"collection": "methode"
@@ -106,7 +103,6 @@ func TestReadConfig(t *testing.T) {
 							"collection": "audio"
 						}
 					]	
-				}
 			}`,
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
@@ -135,7 +131,7 @@ func TestReadConfig(t *testing.T) {
 				return
 			}
 			if toString(gotC) != toString(tt.wantC) {
-				t.Errorf("ReadConfig() = %v, want %v", gotC, tt.wantC)
+				t.Errorf("ReadConfig() = %v, want %v", toString(gotC), toString(tt.wantC))
 			}
 		})
 	}
@@ -181,7 +177,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/json"},
 			"methode",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"methode null CT",
@@ -189,7 +184,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				""},
 			"methode",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"methode",
@@ -197,7 +191,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"anytype"},
 			"methode",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"video wrong CT",
@@ -205,7 +198,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"anytype"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"video OK",
@@ -213,7 +205,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/json"},
 			"video",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"video OK long CT",
@@ -221,7 +212,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/json; utf8"},
 			"video",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"audio OK",
@@ -229,7 +219,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json"},
 			"audio",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"audio long CT",
@@ -237,7 +226,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json;UTF8"},
 			"audio",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"audio wrong CT",
@@ -245,7 +233,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio-json"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"wrong origin",
@@ -253,7 +240,6 @@ func TestConfiguration_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 	}
 	for _, tt := range tests {
@@ -307,7 +293,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/json"},
 			"v1-metadata",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"methode null CT",
@@ -315,7 +300,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				""},
 			"v1-metadata",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"methode",
@@ -323,7 +307,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"anytype"},
 			"v1-metadata",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"video wrong CT",
@@ -331,7 +314,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"anytype"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"video OK",
@@ -339,7 +321,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/json"},
 			"video-metadata",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"video OK long CT",
@@ -347,7 +328,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/json; utf8"},
 			"video-metadata",
 			false,
-			// TODO: Add test cases.
 		},
 		{
 			"audio OK",
@@ -355,7 +335,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"audio long CT",
@@ -363,7 +342,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json;UTF8"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"audio wrong CT",
@@ -371,7 +349,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio-json"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 		{
 			"wrong origin",
@@ -379,7 +356,6 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 				"application/vnd.ft-upp-audio+json"},
 			"",
 			true,
-			// TODO: Add test cases.
 		},
 	}
 	for _, tt := range tests {

@@ -38,8 +38,8 @@ func NewWriter(address string, collectionsOriginIdsMap config.Configuration, par
 	return &nativeWriter{address, collections, http.Client{}, parser}
 }
 
-func (c nativeWriter) GetCollection(originID string, contentType string) (string, error) {
-	return c.collections.GetCollection(originID, contentType)
+func (nw *nativeWriter) GetCollection(originID string, contentType string) (string, error) {
+	return nw.collections.GetCollection(originID, contentType)
 }
 
 func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {
