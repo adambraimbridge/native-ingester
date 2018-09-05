@@ -30,7 +30,7 @@ func TestValidateConfig(t *testing.T) {
 			"config Ok",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": {
 						{ContentType: ".*",
 							Collection: "methode",
 						},
@@ -43,7 +43,7 @@ func TestValidateConfig(t *testing.T) {
 			"Empty ContentType",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": {
 						{ContentType: "",
 							Collection: "methode",
 						},
@@ -56,7 +56,7 @@ func TestValidateConfig(t *testing.T) {
 			"Empty Collection",
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": {
 						{ContentType: "-",
 							Collection: "",
 						},
@@ -106,12 +106,12 @@ func TestReadConfig(t *testing.T) {
 			}`,
 			&Configuration{
 				Config: map[string][]OriginSystemConfig{
-					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": {
 						{ContentType: ".*",
 							Collection: "methode",
 						},
 					},
-					"http://cmdb.ft.com/systems/next-video-editor": []OriginSystemConfig{
+					"http://cmdb.ft.com/systems/next-video-editor": {
 						{ContentType: "application/json",
 							Collection: "video",
 						},
@@ -144,12 +144,12 @@ func TestConfiguration_GetCollection(t *testing.T) {
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
-			"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+			"http://cmdb.ft.com/systems/methode-web-pub": {
 				{ContentType: ".*",
 					Collection: "methode",
 				},
 			},
-			"http://cmdb.ft.com/systems/next-video-editor": []OriginSystemConfig{
+			"http://cmdb.ft.com/systems/next-video-editor": {
 				//{ContentType: "^(application/json).*$",
 				{ContentType: "application/json",
 					Collection: "video",
@@ -264,12 +264,12 @@ func TestConfigurationMetadata_GetCollection(t *testing.T) {
 	}
 	c := &Configuration{
 		Config: map[string][]OriginSystemConfig{
-			"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+			"http://cmdb.ft.com/systems/methode-web-pub": {
 				{ContentType: ".*",
 					Collection: "v1-metadata",
 				},
 			},
-			"http://cmdb.ft.com/systems/next-video-editor": []OriginSystemConfig{
+			"http://cmdb.ft.com/systems/next-video-editor": {
 				{ContentType: "application/json",
 					Collection: "video-metadata",
 				},
