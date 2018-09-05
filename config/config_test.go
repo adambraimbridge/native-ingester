@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -17,6 +18,65 @@ func toString(c *Configuration) string {
 		}
 	}
 	return str
+}
+
+func TestValidateConfig(t *testing.T) {
+	tests := []struct {
+		name string
+		c    *Configuration
+		err  error
+	}{
+		{
+			"config Ok",
+			&Configuration{
+				Config: map[string][]OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+						{ContentType: ".*",
+							Collection: "methode",
+						},
+					},
+				},
+			},
+			nil,
+		},
+		{
+			"Empty ContentType",
+			&Configuration{
+				Config: map[string][]OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+						{ContentType: "",
+							Collection: "methode",
+						},
+					},
+				},
+			},
+			errors.New("ContentType value is mandatory"),
+			// TODO: Add test cases.
+		},
+		{
+			"Empty Collection",
+			&Configuration{
+				Config: map[string][]OriginSystemConfig{
+					"http://cmdb.ft.com/systems/methode-web-pub": []OriginSystemConfig{
+						{ContentType: "-",
+							Collection: "",
+						},
+					},
+				},
+			},
+			errors.New("Collection value is mandatory"),
+			// TODO: Add test cases.
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.c.validateConfig()
+			if err != tt.err && err.Error() != tt.err.Error() {
+				t.Errorf("Configuration.validateConfig() error = %v, wantErr %v", err, tt.err)
+				return
+			}
+		})
+	}
 }
 
 func TestReadConfig(t *testing.T) {
