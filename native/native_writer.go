@@ -14,9 +14,12 @@ import (
 	"github.com/Financial-Times/service-status-go/httphandlers"
 )
 
-const nativeHashHeader = "X-Native-Hash"
-const contentTypeHeader = "Content-Type"
-const transactionIDHeader = "X-Request-Id"
+const (
+	nativeHashHeader     = "X-Native-Hash"
+	contentTypeHeader    = "Content-Type"
+	transactionIDHeader  = "X-Request-Id"
+	originSystemIDHeader = "Origin-System-Id"
+)
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
@@ -76,6 +79,11 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 
 	}
 
+	if request.Header.Get(originSystemIDHeader) == "" {
+		logger.NewEntry(msg.TransactionID()).
+			WithUUID(contentUUID).
+			Warn("Native-save request does not have Origin-System-ID header")
+	}
 	response, err := nw.httpClient.Do(request)
 
 	if err != nil {
@@ -161,10 +169,18 @@ func (msg *NativeMessage) AddContentTypeHeader(hash string) {
 	msg.headers[contentTypeHeader] = hash
 }
 
+func (msg *NativeMessage) AddOriginSystemIDHeader(hash string) {
+	msg.headers[originSystemIDHeader] = hash
+}
+
 func (msg *NativeMessage) TransactionID() string {
 	return msg.headers[transactionIDHeader]
 }
 
 func (msg *NativeMessage) ContentType() string {
 	return msg.headers[contentTypeHeader]
+}
+
+func (msg *NativeMessage) OriginSystemID() string {
+	return msg.headers[originSystemIDHeader]
 }
