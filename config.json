@@ -18,13 +18,13 @@
         },
         {
             "content_type": "^(application/)*(vnd.ft-upp-audio).*$",
-            "collection": "spark"
+            "collection": "universal-content"
         }
     ],
     "http://cmdb.ft.com/systems/cct": [
         {
             "content_type": ".*",
-            "collection": "spark"
+            "collection": "universal-content"
         }
     ]
 }

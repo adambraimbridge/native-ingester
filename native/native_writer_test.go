@@ -19,44 +19,46 @@ var methodeCollection = []string{"methode"}
 const (
 	methodeOriginSystemID = "http://cmdb.ft.com/systems/methode-web-pub"
 
-	publishRef   = "tid_test-pub-ref"
-	aUUID        = "572d0acc-3f12-4e70-8830-8092c1042a52"
-	aTimestamp   = "2017-02-16T12:56:16Z"
-	aHash        = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
-	aContentType = "application/json; version=1.0"
-
+	publishRef              = "tid_test-pub-ref"
+	aUUID                   = "572d0acc-3f12-4e70-8830-8092c1042a52"
+	aTimestamp              = "2017-02-16T12:56:16Z"
+	aHash                   = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
+	aContentType            = "application/json; version=1.0"
 	withNativeHashHeader    = true
 	withoutNativeHashHeader = false
 )
 
-var strCollectionsOriginIdsMap = `{
-        "http://cmdb.ft.com/systems/methode-web-pub": [
-            {
-				"content_type": "(application/json).*",
-                "collection": "methode"
-            }
-        ]
-}`
-
-var audioStrCollectionsOriginIdsMap = `{
-		"http://cmdb.ft.com/systems/next-video-editor": [
-            {
-                "content_type": "^(application/json).*$",
-                "collection": "video"
-            },
-            {
-                "content_type": "^(application/)*(vnd.ft-upp-audio\\+json).*$",
-                "collection": "spark"
-            }
-        ]
-}`
-var aContentBody = map[string]interface{}{
-	"publishReference": publishRef,
-	"lastModified":     aTimestamp,
-}
+var strCollectionsOriginIdsMap string
+var audioStrCollectionsOriginIdsMap string
+var aContentBody map[string]interface{}
 
 func init() {
 	logger.InitDefaultLogger("native-ingester")
+	aContentBody = map[string]interface{}{
+		"publishReference": publishRef,
+		"lastModified":     aTimestamp,
+	}
+	audioStrCollectionsOriginIdsMap =
+		`{
+		   "http://cmdb.ft.com/systems/next-video-editor": [
+			   {
+				   "content_type": "^(application/json).*$",
+				   "collection": "video"
+			   },
+			   {
+				   "content_type": "^(application/)*(vnd.ft-upp-audio\\+json).*$",
+				   "collection": "universal-content"
+			   }
+		   ]
+   }`
+	strCollectionsOriginIdsMap = `{
+		"http://cmdb.ft.com/systems/methode-web-pub": [
+			{
+				"content_type": "(application/json).*",
+				"collection": "methode"
+			}
+		]
+	}`
 }
 
 func setupMockNativeWriterService(t *testing.T, status int, hasHash bool) *httptest.Server {
@@ -210,23 +212,23 @@ func TestGetVideoCollection(t *testing.T) {
 	}{
 		{
 			"application/vnd.ft-upp-audio+json;version=1.0",
-			"spark",
+			"universal-content",
 			false},
 		{
 			"application/vnd.ft-upp-audio+json",
-			"spark",
+			"universal-content",
 			false},
 		{
 			"application/vnd.ft-upp-audio+json;",
-			"spark",
+			"universal-content",
 			false},
 		{
 			"application/vnd.ft-upp-audio+json;version=1.0",
-			"spark",
+			"universal-content",
 			false},
 		{
 			"vnd.ft-upp-audio+json",
-			"spark",
+			"universal-content",
 			false},
 		{"application/json",
 			"video",
