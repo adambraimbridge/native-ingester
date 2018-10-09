@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
 	"github.com/Financial-Times/native-ingester/queue"
 	"github.com/Financial-Times/native-ingester/resources"
@@ -54,12 +54,6 @@ func main() {
 		Desc:   "Address (URL) of service that writes persistently the native content",
 		EnvVar: "NATIVE_RW_ADDRESS",
 	})
-	nativeWriterCollectionsByOrigins := app.String(cli.StringOpt{
-		Name:   "native-writer-collections-by-origins",
-		Value:  "{}",
-		Desc:   "Mapping from originId (URI) to native collection name, in JSON format. e.g. {\"http://cmdb.ft.com/systems/methode-web-pub\":\"methode\"}",
-		EnvVar: "NATIVE_RW_COLLECTIONS_BY_ORIGINS",
-	})
 	contentUUIDfields := app.Strings(cli.StringsOpt{
 		Name:   "content-uuid-fields",
 		Value:  []string{},
@@ -93,24 +87,30 @@ func main() {
 		EnvVar: "APP_NAME",
 	})
 
+	configFile := app.String(cli.StringOpt{
+		Name:   "config",
+		Value:  "",
+		Desc:   "Config file (e.g. config.json)",
+		EnvVar: "CONFIG",
+	})
+
 	app.Action = func() {
 		logger.InitDefaultLogger(*appName)
-
-		var collectionsByOriginIds map[string]string
-		if err := json.Unmarshal([]byte(*nativeWriterCollectionsByOrigins), &collectionsByOriginIds); err != nil {
-			logger.Errorf(nil, err, "Couldn't parse JSON for originId to collection map")
+		conf, err := config.ReadConfig(*configFile)
+		if err != nil {
+			logger.Errorf(nil, err, "Error reading the configuration")
 		}
 
 		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
 		bodyParser := native.NewContentBodyParser(*contentUUIDfields)
-		writer := native.NewWriter(*nativeWriterAddress, collectionsByOriginIds, bodyParser)
+		writer := native.NewWriter(*nativeWriterAddress, *conf, bodyParser)
 		logger.Infof(nil, "[Startup] Using native writer configuration: %# v", writer)
 
 		mh := queue.NewMessageHandler(writer, *contentType)
 
 		var messageProducer kafka.Producer
 		if *writeQueueAddress != "" {
-			messageProducer, err := kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
+			messageProducer, err = kafka.NewPerseverantProducer(*writeQueueAddress, *writeQueueTopic, nil, 0, time.Minute)
 			if err != nil {
 				logger.Errorf(nil, err, "unable to create producer for %v/%v", *writeQueueAddress, *writeQueueTopic)
 			}

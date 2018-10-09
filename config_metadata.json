@@ -1,0 +1,20 @@
+{
+    "http://cmdb.ft.com/systems/methode-web-pub": [
+        {
+            "content_type": ".*",
+            "collection": "v1-metadata"
+        }
+    ],
+    "http://cmdb.ft.com/systems/pac": [
+        {
+            "content_type": ".*",
+            "collection": "pac-metadata"
+        }
+    ],
+    "http://cmdb.ft.com/systems/next-video-editor": [
+        {
+            "content_type": "^(application/json).*$",
+            "collection": "video-metadata"
+        }
+    ]
+}

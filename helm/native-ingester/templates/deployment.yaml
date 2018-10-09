@@ -40,6 +40,8 @@ spec:
             configMapKeyRef:
               name: global-config
               key: zookeeper.url
+        - name: CONFIG
+          value: {{ .Values.env.CONFIG }}
         - name: Q_READ_GROUP
           value: {{ .Values.env.QUEUE_READ_GROUP }}
         - name: Q_READ_TOPIC
@@ -50,8 +52,6 @@ spec:
           value: {{ .Values.env.CONTENT_TYPE }}
         - name: NATIVE_RW_ADDRESS
           value: "http://nativerw:8080"
-        - name: NATIVE_RW_COLLECTIONS_BY_ORIGINS
-          value: {{ .Values.env.NATIVE_RW_COLLECTIONS_BY_ORIGINS }}
         - name: Q_WRITE_ADDR
           valueFrom:
             configMapKeyRef:

@@ -41,7 +41,7 @@ Options:
   --read-queue-group=""                         Group used to read the messages from the queue. ($Q_READ_GROUP)
   --read-queue-topic=""                         The topic to read the messages from. ($Q_READ_TOPIC)
   --native-writer-address=""                    Address (URL) of service that writes persistently the native content ($NATIVE_RW_ADDRESS)
-  --native-writer-collections-by-origins="{}"   Mapping from originId (URI) to native collection name, in JSON format. e.g. {"http://cmdb.ft.com/systems/methode-web-pub":"methode"} ($NATIVE_RW_COLLECTIONS_BY_ORIGINS)
+  --config="config.json"                        Configuration file - Mapping from (originId (URI), Content Type) to native collection name, in JSON format, for content_type attribute specify a RegExp Literal expression.
   --content-uuid-fields=[]                      List of JSONPaths that point to UUIDs in native content bodies. e.g. uuid,post.uuid,data.uuidv3 ($NATIVE_CONTENT_UUID_FIELDS)
   --write-queue-address=""                      Kafka address (host:port) to connect to the producer queue. ($Q_WRITE_ADDR)
   --write-topic=""                              The topic to write the messages to. ($Q_WRITE_TOPIC)

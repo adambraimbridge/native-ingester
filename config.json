@@ -1,0 +1,30 @@
+{
+    "http://cmdb.ft.com/systems/methode-web-pub": [
+        {
+            "content_type": ".*",
+            "collection": "methode"
+        }
+    ],
+    "http://cmdb.ft.com/systems/wordpress": [
+        {
+            "content_type": ".*",
+            "collection": "wordpress"
+        }
+    ],
+    "http://cmdb.ft.com/systems/next-video-editor": [
+        {
+            "content_type": "^(application/json).*$",
+            "collection": "video"
+        },
+        {
+            "content_type": "^(application/)*(vnd.ft-upp-audio).*$",
+            "collection": "universal-content"
+        }
+    ],
+    "http://cmdb.ft.com/systems/cct": [
+        {
+            "content_type": ".*",
+            "collection": "universal-content"
+        }
+    ]
+}
