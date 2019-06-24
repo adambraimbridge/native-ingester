@@ -159,12 +159,12 @@ func NewNativeMessage(contentBody string, timestamp string, transactionID string
 	return msg, nil
 }
 
-//AddHashHeader adds the hash of the native content as a header
+// AddHashHeader adds the hash of the native content as a header
 func (msg *NativeMessage) AddHashHeader(hash string) {
 	msg.headers[nativeHashHeader] = hash
 }
 
-//AddContentTypeHeader adds the content type of the native content as a header
+// AddContentTypeHeader adds the content type of the native content as a header
 func (msg *NativeMessage) AddContentTypeHeader(hash string) {
 	msg.headers[contentTypeHeader] = hash
 }

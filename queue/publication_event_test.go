@@ -64,7 +64,7 @@ func TestGetCNativeNativeMessageFailBecauseMissingTimstamp(t *testing.T) {
 	pe := publicationEvent{aMsgWithoutTimestamp}
 	_, err := pe.nativeMessage()
 
-	assert.EqualError(t, err, "Publish event does not contain timestamp", "It should return an error")
+	assert.EqualError(t, err, "publish event does not contain timestamp", "It should return an error")
 }
 
 func TestGetProducerMessage(t *testing.T) {
