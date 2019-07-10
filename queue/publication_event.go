@@ -29,7 +29,7 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
 	if !found {
-		return native.NativeMessage{}, errors.New("Publish event does not contain timestamp")
+		return native.NativeMessage{}, errors.New("publish event does not contain timestamp")
 	}
 
 	msg, err := native.NewNativeMessage(pe.Body, timestamp, pe.transactionID())

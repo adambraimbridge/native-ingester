@@ -28,7 +28,7 @@ func main() {
 		EnvVar: "PORT",
 	})
 
-	//Read queue configuration
+	// Read queue configuration
 	readQueueAddresses := app.Strings(cli.StringsOpt{
 		Name:   "read-queue-addresses",
 		Value:  nil,
