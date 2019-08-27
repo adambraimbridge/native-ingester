@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine
+FROM golang:1
 
 ENV PROJECT=native-ingester
 
@@ -10,7 +10,6 @@ COPY . ${SRC_FOLDER}
 WORKDIR ${SRC_FOLDER}
 
 # Set up our extra bits in the image
-RUN apk --no-cache add git curl
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 # Install dependancies and build app
