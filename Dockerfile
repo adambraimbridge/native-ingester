@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine
+FROM golang:1
 
 ENV PROJECT=native-ingester
 
@@ -10,7 +10,6 @@ COPY . ${SRC_FOLDER}
 WORKDIR ${SRC_FOLDER}
 
 # Set up our extra bits in the image
-RUN apk --no-cache add git curl
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
 # Install dependancies and build app
@@ -22,7 +21,8 @@ RUN VERSION="version=$(git describe --tag --always 2> /dev/null)" \
     && REVISION="revision=$(git rev-parse HEAD)" \
     && BUILDER="builder=$(go version)" \
     && LDFLAGS="-s -w -X '"${BUILDINFO_PACKAGE}$VERSION"' -X '"${BUILDINFO_PACKAGE}$DATETIME"' -X '"${BUILDINFO_PACKAGE}$REPOSITORY"' -X '"${BUILDINFO_PACKAGE}$REVISION"' -X '"${BUILDINFO_PACKAGE}$BUILDER"'" \
-    && CGO_ENABLED=0 go build -a -o /artifacts/${PROJECT} -ldflags="${LDFLAGS}"
+    && CGO_ENABLED=0 go build -a -o /artifacts/${PROJECT} -ldflags="${LDFLAGS}" \
+    && echo "Build flags: ${LDFLAGS}"
 
 
 # Multi-stage build - copy certs and the binary into the image
