@@ -1,8 +1,4 @@
-all: clean deps test build
-
-deps:
-	@echo ">>> Installing project dependencies..."
-	dep ensure
+all: clean test build
 
 build:
 	@echo ">>> Building Application..."

@@ -8,12 +8,11 @@ Native ingester implements the following functionality:
 1. Optionally, it forwards consumed messages to a different queue.
 
 ## Installation & running locally
-[dep](https://github.com/golang/dep/) is a pre-requisite.
+
 Installation:
 ```
 go get github.com/Financial-Times/native-ingester
 cd $GOPATH/src/github.com/Financial-Times/native-ingester
-dep ensure -vendor-only
 go test ./...
 go install
 
