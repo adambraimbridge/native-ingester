@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
@@ -15,7 +15,7 @@ import (
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 func main() {
@@ -118,7 +118,7 @@ func main() {
 			mh.ForwardTo(messageProducer)
 		}
 
-		messageConsumer, err := kafka.NewPerseverantConsumer((*readQueueAddresses)[0], *readQueueGroup, []string{*readQueueTopic}, nil, time.Minute)
+		messageConsumer, err := kafka.NewPerseverantConsumer((*readQueueAddresses)[0], *readQueueGroup, []string{*readQueueTopic}, nil, time.Minute, nil)
 		if err != nil {
 			logger.Errorf(nil, err, "unable to create message consumer for %v/%v", *readQueueAddresses, *readQueueTopic)
 		}
