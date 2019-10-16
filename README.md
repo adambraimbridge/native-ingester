@@ -48,6 +48,12 @@ Options:
   --appName="native-ingester"                   The name of the application ($APP_NAME)
 ```
 
+Example command line:
+
+```shell
+native-ingester --read-queue-addresses localhost:2181 --read-queue-group nativeIngesterCms --read-queue-topic PreNativeCmsPublicationEvents --native-writer-address http://localhost:8081 --content-uuid-fields uuid --content-uuid-fields post.uuid --content-uuid-fields data.uuidv3 --content-uuid-fields id --write-queue-address localhost:9092 --write-topic NativeCmsPublicationEvents --config config.json --content-type Content
+``` 
+
 ## Admin endpoints
 
   - `https://{host}/__native-store-{type}/__health`
