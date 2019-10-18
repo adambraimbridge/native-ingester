@@ -59,6 +59,8 @@ spec:
               key: kafka.url
         - name: Q_WRITE_TOPIC
           value: {{ .Values.env.QUEUE_WRITE_TOPIC }}
+        - name: PANIC_GUIDE_URL
+          value: {{ .Values.env.PANIC_GUIDE_URL }}
         ports: 
         - containerPort: 8080 
         livenessProbe: 

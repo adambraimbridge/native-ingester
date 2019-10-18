@@ -1,13 +1,16 @@
 package main
 
 import (
+	"errors"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/Financial-Times/go-logger"
+	logger "github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/Financial-Times/native-ingester/config"
 	"github.com/Financial-Times/native-ingester/native"
@@ -15,7 +18,7 @@ import (
 	"github.com/Financial-Times/native-ingester/resources"
 	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 func main() {
@@ -29,9 +32,9 @@ func main() {
 	})
 
 	// Read queue configuration
-	readQueueAddresses := app.Strings(cli.StringsOpt{
+	readQueueAddresses := app.String(cli.StringOpt{
 		Name:   "read-queue-addresses",
-		Value:  nil,
+		Value:  "",
 		Desc:   "Zookeeper addresses (host:port) to connect to the consumer queue.",
 		EnvVar: "Q_READ_ADDR",
 	})
@@ -79,26 +82,34 @@ func main() {
 		Desc:   "The type of the content (for logging purposes, e.g. \"Content\" or \"Annotations\") the application is able to handle.",
 		EnvVar: "CONTENT_TYPE",
 	})
-
 	appName := app.String(cli.StringOpt{
 		Name:   "appName",
 		Value:  "native-ingester",
 		Desc:   "The name of the application",
 		EnvVar: "APP_NAME",
 	})
-
 	configFile := app.String(cli.StringOpt{
 		Name:   "config",
 		Value:  "",
 		Desc:   "Config file (e.g. config.json)",
 		EnvVar: "CONFIG",
 	})
+	panicGuideUrl := app.String(cli.StringOpt{
+		Name:   "panic-guide",
+		Value:  "",
+		Desc:   "Panic Guide URL",
+		EnvVar: "PANIC_GUIDE_URL",
+	})
 
 	app.Action = func() {
 		logger.InitDefaultLogger(*appName)
 		conf, err := config.ReadConfig(*configFile)
 		if err != nil {
-			logger.Errorf(nil, err, "Error reading the configuration")
+			logger.Fatalf(nil, err, "Error reading the configuration")
+		}
+
+		if *panicGuideUrl == "" {
+			logger.Fatalf(nil, errors.New("empty panicGuideUrl"), "Incorrect usage")
 		}
 
 		logger.Infof(nil, "[Startup] Using UUID paths configuration: %# v", *contentUUIDfields)
@@ -118,7 +129,9 @@ func main() {
 			mh.ForwardTo(messageProducer)
 		}
 
-		messageConsumer, err := kafka.NewPerseverantConsumer((*readQueueAddresses)[0], *readQueueGroup, []string{*readQueueTopic}, nil, time.Minute)
+		consumerConfig := kafka.DefaultConsumerConfig()
+		consumerConfig.Zookeeper.Logger = log.New(ioutil.Discard, "", 0)
+		messageConsumer, err := kafka.NewPerseverantConsumer(*readQueueAddresses, *readQueueGroup, []string{*readQueueTopic}, consumerConfig, time.Minute, nil)
 		if err != nil {
 			logger.Errorf(nil, err, "unable to create message consumer for %v/%v", *readQueueAddresses, *readQueueTopic)
 		}
@@ -130,7 +143,7 @@ func main() {
 			logger.Infof(map[string]interface{}{}, "[Startup] Producer: %# v", messageProducer)
 		}
 
-		go enableHealthCheck(*port, messageConsumer, messageProducer, writer)
+		go enableHealthCheck(*port, messageConsumer, messageProducer, writer, *panicGuideUrl)
 		startMessageConsumption(messageConsumer, mh.HandleMessage)
 	}
 
@@ -140,8 +153,8 @@ func main() {
 	}
 }
 
-func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Producer, nw native.Writer) {
-	hc := resources.NewHealthCheck(consumer, producer, nw)
+func enableHealthCheck(port string, consumer kafka.Consumer, producer kafka.Producer, nw native.Writer, pg string) {
+	hc := resources.NewHealthCheck(consumer, producer, nw, pg)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/__health", hc.Handler())

@@ -9,6 +9,7 @@ env:
   CONFIG: "config_metadata.json"
   QUEUE_WRITE_TOPIC: "NativeCmsMetadataPublicationEvents"
   CONTENT_TYPE: "Annotations"
+  PANIC_GUIDE_URL: "https://runbooks.in.ft.com/native-ingester-metadata"
 resources:
   requests:
     memory: 200Mi
