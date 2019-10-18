@@ -12,17 +12,19 @@ import (
 
 // HealthCheck implements the healthcheck for the native ingester
 type HealthCheck struct {
-	writer   native.Writer
-	consumer kafka.Consumer
-	producer kafka.Producer
+	writer     native.Writer
+	consumer   kafka.Consumer
+	producer   kafka.Producer
+	panicGuide string
 }
 
 // NewHealthCheck return a new instance of a native ingester HealthCheck
-func NewHealthCheck(c kafka.Consumer, p kafka.Producer, nw native.Writer) *HealthCheck {
+func NewHealthCheck(c kafka.Consumer, p kafka.Producer, nw native.Writer, pg string) *HealthCheck {
 	return &HealthCheck{
-		writer:   nw,
-		consumer: c,
-		producer: p,
+		writer:     nw,
+		consumer:   c,
+		producer:   p,
+		panicGuide: pg,
 	}
 }
 
@@ -31,7 +33,7 @@ func (hc *HealthCheck) consumerQueueCheck() fthealth.Check {
 		ID:               "consumer-queue",
 		BusinessImpact:   "Native content or metadata will not reach this app, nor will they be stored in native store",
 		Name:             "ConsumerQueueReachable",
-		PanicGuide:       "https://dewey.in.ft.com/runbooks/native-ingester",
+		PanicGuide:       hc.panicGuide,
 		Severity:         2,
 		TechnicalSummary: "Consumer message queue is not reachable/healthy",
 		Checker:          check(hc.consumer.ConnectivityCheck),
@@ -43,7 +45,7 @@ func (hc *HealthCheck) producerQueueCheck() fthealth.Check {
 		ID:               "producer-queue",
 		BusinessImpact:   "Content or metadata will not reach the end of the publishing pipeline",
 		Name:             "ProducerQueueReachable",
-		PanicGuide:       "https://dewey.in.ft.com/runbooks/native-ingester",
+		PanicGuide:       hc.panicGuide,
 		Severity:         2,
 		TechnicalSummary: "Producer message queue is not reachable/healthy",
 		Checker:          check(hc.producer.ConnectivityCheck),
@@ -55,7 +57,7 @@ func (hc *HealthCheck) nativeWriterCheck() fthealth.Check {
 		ID:               "native-writer",
 		BusinessImpact:   "Content or metadata will not be written in the native store nor will they reach the end of the publishing pipeline",
 		Name:             "NativeWriterReachable",
-		PanicGuide:       "https://dewey.in.ft.com/runbooks/nativestorereaderwriter",
+		PanicGuide:       "https://runbooks.in.ft.com/nativerw",
 		Severity:         2,
 		TechnicalSummary: "Native writer is not reachable/healthy",
 		Checker:          hc.writer.ConnectivityCheck,

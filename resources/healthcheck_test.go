@@ -17,11 +17,12 @@ func TestNewHealthCheckWithoutProducer(t *testing.T) {
 
 	c, _ := kafka.NewConsumer(kafka.Config{"localhost:2181", "test", []string{"testTopic"}, nil, nil})
 	nw := new(mocks.WriterMock)
-	hc := NewHealthCheck(c, nil, nw)
+	hc := NewHealthCheck(c, nil, nw, "http://test-panic-guide.com")
 
 	assert.Nil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
 	assert.NotNil(t, hc.writer)
+	assert.NotNil(t, hc.panicGuide)
 }
 
 func TestNewHealthCheckWithProducer(t *testing.T) {
@@ -32,11 +33,12 @@ func TestNewHealthCheckWithProducer(t *testing.T) {
 	c, _ := kafka.NewConsumer(kafka.Config{"localhost:2181", "test", []string{"testTopic"}, nil, nil})
 	p, _ := kafka.NewProducer("localhost:9092", "testTopic", nil)
 	nw := new(mocks.WriterMock)
-	hc := NewHealthCheck(c, p, nw)
+	hc := NewHealthCheck(c, p, nw, "http://test-panic-guide.com")
 
 	assert.NotNil(t, hc.producer)
 	assert.NotNil(t, hc.consumer)
 	assert.NotNil(t, hc.writer)
+	assert.NotNil(t, hc.panicGuide)
 }
 
 func TestHappyHealthCheckWithoutProducer(t *testing.T) {
