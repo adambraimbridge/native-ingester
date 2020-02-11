@@ -26,5 +26,17 @@
             "content_type": ".*",
             "collection": "universal-content"
         }
+    ],
+    "http://cmdb.ft.com/systems/spark": [
+        {
+            "content_type": ".*",
+            "collection": "universal-content"
+        }
+    ],
+    "http://cmdb.ft.com/systems/spark-lists": [
+        {
+            "content_type": "application/vnd.ft-upp-list+json",
+            "collection": "universal-content"
+        }
     ]
 }
