@@ -41,7 +41,7 @@ func init() {
 func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 
@@ -56,7 +56,7 @@ func TestWriteToNativeSuccessfullyWithoutForward(t *testing.T) {
 func TestWriteToNativeSuccessfullyWithForward(t *testing.T) {
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(nil)
@@ -99,7 +99,7 @@ func TestWriteToNativeFailWithNotCollectionForOriginId(t *testing.T) {
 func TestWriteToNativeFailBecauseOfWriter(t *testing.T) {
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", errors.New("I do not want to write today!"))
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", errors.New("I do not want to write today!"))
 
 	p := new(mocks.ProducerMock)
 
@@ -115,7 +115,7 @@ func TestForwardFailBecauseOfProducer(t *testing.T) {
 	hook := logger.NewTestHook("native-ingester")
 	w := new(mocks.WriterMock)
 	w.On("GetCollection", methodeOriginSystemID, contentType).Return(methodeCollection, nil)
-	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", nil)
+	w.On("WriteToCollection", mock.AnythingOfType("native.NativeMessage"), methodeCollection).Return("", "", nil)
 
 	p := new(mocks.ProducerMock)
 	p.On("SendMessage", mock.AnythingOfType("kafka.FTMessage")).Return(errors.New("Today, I am not writing on a queue."))
