@@ -15,12 +15,13 @@ import (
 )
 
 const (
-	nativeHashHeader     = "X-Native-Hash"
-	contentTypeHeader    = "Content-Type"
-	transactionIDHeader  = "X-Request-Id"
-	originSystemIDHeader = "Origin-System-Id"
-	messageTypeHeader    = "Message-Type"
-	messageTypePartial   = "cms-partial-content-published"
+	nativeHashHeader                   = "X-Native-Hash"
+	contentTypeHeader                  = "Content-Type"
+	transactionIDHeader                = "X-Request-Id"
+	originSystemIDHeader               = "Origin-System-Id"
+	messageTypeHeader                  = "Message-Type"
+	messageTypePartialContentPublished = "cms-partial-content-published"
+	universalContentCollectionName     = "universal-content"
 )
 
 // Writer provides the functionalities to write in the native store
@@ -64,7 +65,13 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
 	httpMethod := "PUT"
 
-	if msg.IsPartialContent() && collection == "universal-content" {
+	if msg.IsPartialContent() {
+		// partial content is only supported for Spark Publishes (universal-content collection)
+		if collection != universalContentCollectionName {
+			err = errors.New("Error calling PATCH endoint - only supported for universal-content collection")
+			logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling PATCH endoint - only supported for universal-content collection")
+			return contentUUID, "", err
+		}
 		httpMethod = "PATCH"
 	}
 	request, err := http.NewRequest(httpMethod, requestURL, bytes.NewBuffer(cBodyAsJSON))
@@ -196,5 +203,5 @@ func (msg *NativeMessage) OriginSystemID() string {
 }
 
 func (msg *NativeMessage) IsPartialContent() bool {
-	return msg.headers[messageTypeHeader] == messageTypePartial
+	return msg.headers[messageTypeHeader] == messageTypePartialContentPublished
 }
