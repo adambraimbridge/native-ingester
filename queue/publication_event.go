@@ -25,6 +25,10 @@ func (pe *publicationEvent) contentType() string {
 	return strings.TrimSpace(pe.Headers["Content-Type"])
 }
 
+func (pe *publicationEvent) messageType() string {
+	return strings.TrimSpace(pe.Headers["Message-Type"])
+}
+
 func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 
 	timestamp, found := pe.Headers["Message-Timestamp"]
@@ -32,7 +36,7 @@ func (pe *publicationEvent) nativeMessage() (native.NativeMessage, error) {
 		return native.NativeMessage{}, errors.New("publish event does not contain timestamp")
 	}
 
-	msg, err := native.NewNativeMessage(pe.Body, timestamp, pe.transactionID())
+	msg, err := native.NewNativeMessage(pe.Body, timestamp, pe.transactionID(), pe.messageType())
 
 	if err != nil {
 		return native.NativeMessage{}, err

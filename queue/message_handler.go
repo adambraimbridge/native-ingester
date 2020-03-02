@@ -43,7 +43,7 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 		return err
 	}
 
-	contentUUID, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
+	contentUUID, updatedContent, writerErr := mh.writer.WriteToCollection(writerMsg, collection)
 	if writerErr != nil {
 		logger.NewMonitoringEntry("Ingest", pubEvent.transactionID(), mh.contentType).
 			WithError(writerErr).
@@ -52,6 +52,11 @@ func (mh *MessageHandler) HandleMessage(msg kafka.FTMessage) error {
 	}
 
 	if mh.forwards {
+
+		if writerMsg.IsPartialContent() {
+			pubEvent.Body = updatedContent
+		}
+
 		logger.NewEntry(pubEvent.transactionID()).Info("Forwarding consumed message to different queue")
 		forwardErr := mh.producer.SendMessage(pubEvent.producerMsg())
 		if forwardErr != nil {

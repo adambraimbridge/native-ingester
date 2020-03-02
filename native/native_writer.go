@@ -19,12 +19,14 @@ const (
 	contentTypeHeader    = "Content-Type"
 	transactionIDHeader  = "X-Request-Id"
 	originSystemIDHeader = "Origin-System-Id"
+	messageTypeHeader    = "Message-Type"
+	messageTypePartial   = "cms-partial-content-published"
 )
 
 // Writer provides the functionalities to write in the native store
 type Writer interface {
 	GetCollection(originID string, contentType string) (string, error)
-	WriteToCollection(msg NativeMessage, collection string) (string, error)
+	WriteToCollection(msg NativeMessage, collection string) (string, string, error)
 	ConnectivityCheck() (string, error)
 }
 
@@ -45,25 +47,30 @@ func (nw *nativeWriter) GetCollection(originID string, contentType string) (stri
 	return nw.collections.GetCollection(originID, contentType)
 }
 
-func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, error) {
+func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) (string, string, error) {
 	contentUUID, err := nw.bodyParser.getUUID(msg.body)
 	if err != nil {
 		logger.NewEntry(msg.TransactionID()).WithError(err).Error("Error extracting uuid. Ignoring message.")
-		return contentUUID, err
+		return contentUUID, "", err
 	}
 	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Start processing native publish event")
 	cBodyAsJSON, err := json.Marshal(msg.body)
 
 	if err != nil {
 		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error marshalling message")
-		return contentUUID, err
+		return contentUUID, "", err
 	}
 
 	requestURL := nw.address + "/" + collection + "/" + contentUUID
-	request, err := http.NewRequest("PUT", requestURL, bytes.NewBuffer(cBodyAsJSON))
+	httpMethod := "PUT"
+
+	if msg.IsPartialContent() && collection == "universal-content" {
+		httpMethod = "PATCH"
+	}
+	request, err := http.NewRequest(httpMethod, requestURL, bytes.NewBuffer(cBodyAsJSON))
 	if err != nil {
 		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
-		return contentUUID, err
+		return contentUUID, "", err
 	}
 
 	for header, value := range msg.headers {
@@ -88,7 +95,7 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 
 	if err != nil {
 		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling native writer. Ignoring message.")
-		return contentUUID, err
+		return contentUUID, "", err
 	}
 	defer properClose(msg.TransactionID(), response)
 
@@ -96,11 +103,13 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 		errMsg := "Native writer returned non-200 code"
 		err := errors.New(errMsg)
 		logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error(errMsg)
-		return contentUUID, err
+		return contentUUID, "", err
 	}
 
+	body, err := ioutil.ReadAll(response.Body)
+	updatedContent := string(body)
 	logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).Info("Successfully finished processing native publish event")
-	return contentUUID, nil
+	return contentUUID, updatedContent, nil
 }
 
 func properClose(tid string, resp *http.Response) {
@@ -144,7 +153,7 @@ type NativeMessage struct {
 }
 
 // NewNativeMessage returns a new instance of a NativeMessage
-func NewNativeMessage(contentBody string, timestamp string, transactionID string) (NativeMessage, error) {
+func NewNativeMessage(contentBody string, timestamp string, transactionID string, messageType string) (NativeMessage, error) {
 	body := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(contentBody), &body); err != nil {
 		return NativeMessage{}, err
@@ -155,6 +164,7 @@ func NewNativeMessage(contentBody string, timestamp string, transactionID string
 
 	msg := NativeMessage{body, make(map[string]string)}
 	msg.headers[transactionIDHeader] = transactionID
+	msg.headers[messageTypeHeader] = messageType
 
 	return msg, nil
 }
@@ -183,4 +193,8 @@ func (msg *NativeMessage) ContentType() string {
 
 func (msg *NativeMessage) OriginSystemID() string {
 	return msg.headers[originSystemIDHeader]
+}
+
+func (msg *NativeMessage) IsPartialContent() bool {
+	return msg.headers[messageTypeHeader] == messageTypePartial
 }
