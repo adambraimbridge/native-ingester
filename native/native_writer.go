@@ -21,7 +21,6 @@ const (
 	originSystemIDHeader               = "Origin-System-Id"
 	messageTypeHeader                  = "Message-Type"
 	messageTypePartialContentPublished = "cms-partial-content-published"
-	universalContentCollectionName     = "universal-content"
 )
 
 // Writer provides the functionalities to write in the native store
@@ -66,12 +65,6 @@ func (nw *nativeWriter) WriteToCollection(msg NativeMessage, collection string) 
 	httpMethod := "PUT"
 
 	if msg.IsPartialContent() {
-		// partial content is only supported for Spark Publishes (universal-content collection)
-		if collection != universalContentCollectionName {
-			err = errors.New("Error calling PATCH endoint - only supported for universal-content collection")
-			logger.NewEntry(msg.TransactionID()).WithUUID(contentUUID).WithError(err).Error("Error calling PATCH endoint - only supported for universal-content collection")
-			return contentUUID, "", err
-		}
 		httpMethod = "PATCH"
 	}
 	request, err := http.NewRequest(httpMethod, requestURL, bytes.NewBuffer(cBodyAsJSON))
