@@ -15,16 +15,17 @@ import (
 )
 
 const (
-	methodeOriginSystemID       = "http://cmdb.ft.com/systems/methode-web-pub"
-	publishRef                  = "tid_test-pub-ref"
-	aUUID                       = "572d0acc-3f12-4e70-8830-8092c1042a52"
-	aTimestamp                  = "2017-02-16T12:56:16Z"
-	aHash                       = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
-	aContentType                = "application/json; version=1.0"
-	withNativeHashHeader        = true
-	withoutNativeHashHeader     = false
-	messageTypeContentPublished = "cms-content-published"
-	methodeCollectionName       = "methode"
+	methodeOriginSystemID          = "http://cmdb.ft.com/systems/methode-web-pub"
+	publishRef                     = "tid_test-pub-ref"
+	aUUID                          = "572d0acc-3f12-4e70-8830-8092c1042a52"
+	aTimestamp                     = "2017-02-16T12:56:16Z"
+	aHash                          = "27f79e6d884acdd642d1758c4fd30d43074f8384d552d1ebb1959345"
+	aContentType                   = "application/json; version=1.0"
+	withNativeHashHeader           = true
+	withoutNativeHashHeader        = false
+	messageTypeContentPublished    = "cms-content-published"
+	methodeCollectionName          = "methode"
+	universalContentCollectionName = "universal-content"
 )
 
 var strCollectionsOriginIdsMap string
@@ -298,26 +299,6 @@ func TestWritePartialMessageToCollectionWithSuccess(t *testing.T) {
 	contentUUID, _, err := w.WriteToCollection(msg, universalContentCollectionName)
 
 	assert.NoError(t, err, "It should not return an error")
-	assert.Equal(t, aUUID, contentUUID)
-	p.AssertExpectations(t)
-}
-
-func TestWritePartialMessageToCollectionFailBecauseOfUnsupportedCollection(t *testing.T) {
-	p := new(ContentBodyParserMock)
-	testCollectionsOriginIdsMap, err := getConfig(sparkCollectionsOriginIdsMap)
-	assert.NoError(t, err, "It should not return an error")
-	p.On("getUUID", aContentBody).Return(aUUID, nil)
-	nws := setupMockNativeWriterService(t, 200, withoutNativeHashHeader, "PATCH", universalContentCollectionName)
-	defer nws.Close()
-
-	msg, err := NewNativeMessage("{}", aTimestamp, publishRef, messageTypePartialContentPublished)
-	msg.AddContentTypeHeader(aContentType)
-	assert.NoError(t, err, "It should not return an error by creating a message")
-
-	w := NewWriter(nws.URL, *testCollectionsOriginIdsMap, p)
-	contentUUID, _, err := w.WriteToCollection(msg, methodeCollectionName)
-
-	assert.EqualError(t, err, "Error calling PATCH endoint - only supported for universal-content collection", "It should return an error")
 	assert.Equal(t, aUUID, contentUUID)
 	p.AssertExpectations(t)
 }
