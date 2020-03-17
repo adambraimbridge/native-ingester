@@ -55,6 +55,21 @@ Example command line:
 native-ingester --read-queue-addresses localhost:2181 --read-queue-group nativeIngesterCms --read-queue-topic PreNativeCmsPublicationEvents --native-writer-address http://localhost:8081 --content-uuid-fields uuid --content-uuid-fields post.uuid --content-uuid-fields data.uuidv3 --content-uuid-fields id --write-queue-address localhost:9092 --write-topic NativeCmsPublicationEvents --config config.json --content-type Content --panic-guide https://runbooks.in.ft.com/native-ingester
 ``` 
 
+If you want to run it with docker-compose and all the services native-ingester depends on, first you need to build them with `local` tag.
+
+Prepare `cms-notifier:local` and `nativerw:local` and then run:
+
+```sh
+docker-compose up
+```
+
+| Service         | Port |
+|-----------------|------|
+| native-ingester | 8080 |
+| cms-notifier    | 8081 |
+| nativerw        | 8083 |
+
+
 ## Admin endpoints
 
   - `https://{host}/__native-store-{type}/__health`

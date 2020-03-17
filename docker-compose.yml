@@ -3,13 +3,11 @@ version: '3'
 services:
   zookeeper:
     image: wurstmeister/zookeeper
-    container_name: zookeeper
     ports:
       - "2181:2181"
 
   kafka:
     image: wurstmeister/kafka:0.8.2.0
-    container_name: kafka
     ports:
       - "9092:9092"
     environment:
@@ -23,8 +21,7 @@ services:
       - zookeeper
 
   cms-notifier:
-    image: nexus.in.ft.com:5000/coco/cms-notifier
-    container_name: cms-notifier
+    image: cms-notifier:local
     environment:
       KAFKA_HOST: kafka
       KAFKA_PORT: 9092
@@ -38,18 +35,36 @@ services:
     depends_on:
       - kafka
 
+  mongo:
+    image: mongo:3.4.17
+    ports:
+      - "27017:27017"
+
+  nativerw:
+    image: nativerw:local
+    environment:
+      MONGOS: mongo:27017
+      MONGO_NODE_COUNT: 1
+      CONFIG: /configs/config.json
+    ports:
+      - "8083:8080"
+      - "8084:8081"
+    depends_on:
+      - mongo
+
   app:
     build: .
     image: native-ingester:local
-    container_name: native-ingester
     environment:
       NATIVE_CONTENT_UUID_FIELDS: "uuid,post.uuid,data.uuidv3,id"
+      NATIVE_RW_ADDRESS: "http://nativerw:8080"
       CONFIG: "config.json"
       Q_READ_GROUP: "nativeIngesterCms"
       Q_READ_ADDR: "zookeeper:2181"
       Q_READ_TOPIC: "PreNativeCmsPublicationEvents"
       Q_WRITE_ADDR: "kafka:9092"
       Q_WRITE_TOPIC: "NativeCmsPublicationEvents"
+      PANIC_GUIDE_URL: "http://example.com/panicguide"
     ports:
       - "8080:8080"
     depends_on:

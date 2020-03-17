@@ -50,9 +50,9 @@ func (w *WriterMock) GetCollection(originID string, contentType string) (string,
 	return args.String(0), args.Error(1)
 }
 
-func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) (string, error) {
+func (w *WriterMock) WriteToCollection(msg native.NativeMessage, collection string) (string, string, error) {
 	args := w.Called(msg, collection)
-	return args.String(0), args.Error(1)
+	return args.String(0), args.String(1), args.Error(2)
 }
 
 func (w *WriterMock) ConnectivityCheck() (string, error) {
