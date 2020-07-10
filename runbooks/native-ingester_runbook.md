@@ -1,14 +1,10 @@
 # UPP - Native Ingester
 
-Native ingester consumes messages from a Kafka topic (both content and metadata flows) and propagates them to be written by read-write services in Native store accoridngly.
-
-## Code
-
-native-ingester
+The Native ingester consumes messages from a Kafka topic and propagates them to be written by the read-write service in the Native store.
 
 ## Primary URL
 
-https://upp-prod-publishing-glb.upp.ft.com/__native-ingester/
+<https://upp-prod-publish-glb.upp.ft.com/__native-ingester-cms/>
 
 ## Service Tier
 
@@ -45,7 +41,7 @@ AWS
 
 ## Architecture
 
-Native ingester consumes messages containing native CMS content or native CMS metadata from ONE queue topic. According to the data source, native ingester sends the content or metadata to be written to a specific db collection. Optionally, it forwards consumed messages to a different queue.
+The Native Ingester consumes messages containing native CMS content from the "PreNativeCmsPublicationEvents" Kafka topic. According to the data source, it sends the content to be written to a specific DB collection. Optionally, it forwards consumed messages to a different queue.
 
 ## Contains Personal Data
 
@@ -57,8 +53,9 @@ No
 
 ## Dependencies
 
-- upp-kafka
 - nativestorereaderwriter
+- upp-kafka
+- upp-zookeeper
 
 ## Failover Architecture Type
 
@@ -75,7 +72,7 @@ FullyAutomated
 ## Failover Details
 
 The service is deployed in both publishing clusters. The failover guide for the cluster is located here:
-https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/publishing-cluster
+<https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/publishing-cluster>
 
 ## Data Recovery Process Type
 
@@ -96,7 +93,7 @@ Manual
 ## Release Details
 
 Manual failover is needed when a new version of the service is deployed to production. Otherwise, an automated failover is going to take place when releasing.
-For more details about the failover process please see: https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/publishing-cluster
+For more details about the failover process please see: <https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/publishing-cluster>
 
 ## Key Management Process Type
 
@@ -109,16 +106,15 @@ To rotate credentials you need to login to a particular cluster and update varni
 
 ## Monitoring
 
-- Pub-Prod-EU health:
-https://upp-prod-publish-eu.upp.ft.com/__health/__pods-health?service-name=native-ingester-cms
-https://upp-prod-publish-eu.upp.ft.com/__health/__pods-health?service-name=native-ingester-metadata
-- Pub-Prod-US health:
-https://upp-prod-publish-us.upp.ft.com/__health/__pods-health?service-name=native-ingester-cms
-https://upp-prod-publish-us.upp.ft.com/__health/__pods-health?service-name=native-ingester-metadata
+Publishing EU health:
+- <https://upp-prod-publish-eu.upp.ft.com/__health/__pods-health?service-name=native-ingester-cms>
+
+Publishing US health:
+- <https://upp-prod-publish-us.upp.ft.com/__health/__pods-health?service-name=native-ingester-cms>
 
 ## First Line Troubleshooting
 
-https://github.com/Financial-Times/upp-docs/tree/master/guides/ops/first-line-troubleshooting
+<https://github.com/Financial-Times/upp-docs/tree/master/guides/ops/first-line-troubleshooting>
 
 ## Second Line Troubleshooting
 
